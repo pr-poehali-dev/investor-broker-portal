@@ -5,6 +5,7 @@ import ObjectsPage from '@/components/ObjectsPage';
 import CalculatorPage from '@/components/CalculatorPage';
 import AuthModal from '@/components/AuthModal';
 import BrokerDashboard from '@/components/BrokerDashboard';
+import NewBrokerDashboard from '@/components/NewBrokerDashboard';
 import InvestorDashboard from '@/components/InvestorDashboard';
 
 const Index = () => {
@@ -109,7 +110,7 @@ const Index = () => {
         {activeTab === 'dashboard' && user && (
           <>
             {user.role === 'broker' ? (
-              <BrokerDashboard userName={user.name} />
+              <NewBrokerDashboard userName={user.name} brokerId={`broker-${Date.now()}`} />
             ) : (
               <InvestorDashboard userName={user.name} />
             )}
