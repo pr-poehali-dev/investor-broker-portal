@@ -7,6 +7,7 @@ import AuthModal from '@/components/AuthModal';
 import BrokerDashboard from '@/components/BrokerDashboard';
 import NewBrokerDashboard from '@/components/NewBrokerDashboard';
 import InvestorDashboard from '@/components/InvestorDashboard';
+import type { PropertyObject } from '@/types/investment';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
@@ -27,7 +28,44 @@ const Index = () => {
     }
   }, [user]);
 
+  const [allProperties, setAllProperties] = useState<PropertyObject[]>([]);
+
+  useEffect(() => {
+    const loadAllProperties = () => {
+      try {
+        const saved = localStorage.getItem('investpro-properties');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setAllProperties(parsed.filter((p: PropertyObject) => p.status === 'active'));
+        }
+      } catch (error) {
+        console.error('Error loading properties:', error);
+      }
+    };
+
+    loadAllProperties();
+    const interval = setInterval(loadAllProperties, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const investmentObjects = [
+    ...allProperties.map((p) => ({
+      id: Number(p.id.replace(/\D/g, '')) || Math.random(),
+      title: p.title,
+      location: `${p.location.city}${p.location.district ? ', ' + p.location.district : ''}`,
+      type: p.propertyType === 'apartment' ? 'Жилая недвижимость' : 
+            p.propertyType === 'house' ? 'Жилая недвижимость' :
+            p.propertyType === 'commercial' ? 'Коммерческая недвижимость' : 'Земля',
+      minInvestment: p.pricing.minInvestment,
+      expectedReturn: p.investment.expectedReturn,
+      term: p.investment.term,
+      risk: p.investment.riskLevel === 'low' ? 'Низкий' : 
+            p.investment.riskLevel === 'medium' ? 'Средний' : 'Высокий',
+      progress: Math.round((p.investment.currentInvestment / p.investment.targetInvestment) * 100),
+      image: p.propertyType === 'apartment' ? '🏢' : 
+             p.propertyType === 'house' ? '🏠' :
+             p.propertyType === 'commercial' ? '🏬' : '🏞️',
+    })),
     {
       id: 1,
       title: 'ЖК «Северный квартал»',

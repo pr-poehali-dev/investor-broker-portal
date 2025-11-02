@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,79 +16,109 @@ interface PropertyManagerProps {
 }
 
 const PropertyManager = ({ brokerId, brokerName }: PropertyManagerProps) => {
-  const [properties, setProperties] = useState<PropertyObject[]>([
-    {
-      id: '1',
-      brokerId: 'broker-001',
-      brokerName: 'Иван Петров',
-      title: 'Квартира в центре Москвы',
-      description: 'Современная двухкомнатная квартира с панорамным остеклением',
-      propertyType: 'apartment',
-      status: 'active',
-      location: {
-        city: 'Москва',
-        district: 'Пресненский',
-        address: 'ул. Красная Пресня, д. 15',
-        metro: 'Баррикадная',
-        metroDistance: 5,
+  const STORAGE_KEY = 'investpro-properties';
+
+  const loadProperties = (): PropertyObject[] => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((p: any) => ({
+          ...p,
+          metadata: {
+            ...p.metadata,
+            createdAt: new Date(p.metadata.createdAt),
+            updatedAt: new Date(p.metadata.updatedAt),
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading properties:', error);
+    }
+    return [
+      {
+        id: '1',
+        brokerId: 'broker-001',
+        brokerName: 'Иван Петров',
+        title: 'Квартира в центре Москвы',
+        description: 'Современная двухкомнатная квартира с панорамным остеклением',
+        propertyType: 'apartment',
+        status: 'active',
+        location: {
+          city: 'Москва',
+          district: 'Пресненский',
+          address: 'ул. Красная Пресня, д. 15',
+          metro: 'Баррикадная',
+          metroDistance: 5,
+        },
+        pricing: {
+          totalPrice: 25000000,
+          pricePerMeter: 350000,
+          minInvestment: 5000000,
+          currency: 'RUB',
+        },
+        financing: {
+          method: 'mortgage',
+          mortgageRate: 8.5,
+          downPayment: 20,
+        },
+        investment: {
+          strategy: ['resale', 'rental'],
+          expectedReturn: 18,
+          term: 36,
+          riskLevel: 'medium',
+          currentInvestment: 15000000,
+          targetInvestment: 25000000,
+          investors: 3,
+        },
+        rental: {
+          monthlyIncome: 120000,
+          occupancyRate: 95,
+          rentalYield: 5.76,
+        },
+        resale: {
+          expectedPrice: 30000000,
+          expectedProfit: 5000000,
+          marketGrowth: 6.5,
+        },
+        details: {
+          area: 72,
+          rooms: 2,
+          floor: 12,
+          totalFloors: 25,
+          buildYear: 2023,
+          condition: 'Отличное',
+          parking: true,
+          furnishing: 'С мебелью',
+        },
+        media: {
+          images: [],
+          videos: [],
+        },
+        metadata: {
+          createdAt: new Date('2024-10-15'),
+          updatedAt: new Date('2024-10-30'),
+          views: 234,
+          favorites: 12,
+        },
+        sharing: {
+          telegramPublished: true,
+          telegramUrl: 'https://t.me/channel/123',
+          vkPublished: false,
+        },
       },
-      pricing: {
-        totalPrice: 25000000,
-        pricePerMeter: 350000,
-        minInvestment: 5000000,
-        currency: 'RUB',
-      },
-      financing: {
-        method: 'mortgage',
-        mortgageRate: 8.5,
-        downPayment: 20,
-      },
-      investment: {
-        strategy: ['resale', 'rental'],
-        expectedReturn: 18,
-        term: 36,
-        riskLevel: 'medium',
-        currentInvestment: 15000000,
-        targetInvestment: 25000000,
-        investors: 3,
-      },
-      rental: {
-        monthlyIncome: 120000,
-        occupancyRate: 95,
-        rentalYield: 5.76,
-      },
-      resale: {
-        expectedPrice: 30000000,
-        expectedProfit: 5000000,
-        marketGrowth: 6.5,
-      },
-      details: {
-        area: 72,
-        rooms: 2,
-        floor: 12,
-        totalFloors: 25,
-        buildYear: 2023,
-        condition: 'Отличное',
-        parking: true,
-        furnishing: 'С мебелью',
-      },
-      media: {
-        images: [],
-        videos: [],
-      },
-      metadata: {
-        createdAt: new Date('2024-10-15'),
-        updatedAt: new Date('2024-10-30'),
-        views: 234,
-        favorites: 12,
-      },
-      sharing: {
-        telegramPublished: true,
-        telegramUrl: 'https://t.me/channel/123',
-        vkPublished: false,
-      },
-    },
-  ]);
+    ];
+  };
+
+  const [properties, setProperties] = useState<PropertyObject[]>(loadProperties);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
+    } catch (error) {
+      console.error('Error saving properties:', error);
+    }
+  }, [properties]);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
