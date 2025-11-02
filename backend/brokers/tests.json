@@ -1,0 +1,31 @@
+{
+  "tests": [
+    {
+      "name": "Get all brokers",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": [],
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Create new broker",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "email": "test@example.com",
+        "firstName": "Иван",
+        "lastName": "Петров",
+        "phone": "+79991234567",
+        "company": "Тестовое агентство"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "email": "test@example.com",
+        "first_name": "Иван",
+        "last_name": "Петров"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

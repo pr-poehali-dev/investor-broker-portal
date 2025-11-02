@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "Get investors requires broker ID",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "Broker ID required"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
