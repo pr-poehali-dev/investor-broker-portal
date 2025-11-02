@@ -39,6 +39,18 @@ const getRiskColor = (risk: string) => {
 const ObjectsPage = ({ investmentObjects }: ObjectsPageProps) => {
   const [selectedObject, setSelectedObject] = useState<InvestmentObject | null>(null);
   const [investmentAmount, setInvestmentAmount] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [filterRisk, setFilterRisk] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredObjects = investmentObjects.filter(obj => {
+    const matchesType = filterType === 'all' || obj.type === filterType;
+    const matchesRisk = filterRisk === 'all' || obj.risk === filterRisk;
+    const matchesSearch = obj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          obj.location.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesType && matchesRisk && matchesSearch;
+  });
 
   const handleInvest = () => {
     if (!selectedObject || !investmentAmount) return;
@@ -143,43 +155,80 @@ const ObjectsPage = ({ investmentObjects }: ObjectsPageProps) => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold mb-2">Инвестиционные объекты</h2>
-          <p className="text-muted-foreground">Все доступные предложения</p>
+          <p className="text-muted-foreground">Найдено: {filteredObjects.length} объектов</p>
         </div>
-        <Button className="gap-2">
+        <Button 
+          className="gap-2"
+          variant={showFilters ? "default" : "outline"}
+          onClick={() => setShowFilters(!showFilters)}
+        >
           <Icon name="Filter" size={18} />
           Фильтры
         </Button>
       </div>
 
-      <div className="flex gap-4">
-        <Select>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Тип объекта" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все типы</SelectItem>
-            <SelectItem value="residential">Жилая</SelectItem>
-            <SelectItem value="commercial">Коммерческая</SelectItem>
-          </SelectContent>
-        </Select>
+      {showFilters && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <Label>Тип объекта</Label>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Тип объекта" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все типы</SelectItem>
+                    <SelectItem value="Жилая недвижимость">Жилая недвижимость</SelectItem>
+                    <SelectItem value="Коммерческая недвижимость">Коммерческая недвижимость</SelectItem>
+                    <SelectItem value="Земельные участки">Земельные участки</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <Select>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Уровень риска" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все риски</SelectItem>
-            <SelectItem value="low">Низкий</SelectItem>
-            <SelectItem value="medium">Средний</SelectItem>
-            <SelectItem value="high">Высокий</SelectItem>
-          </SelectContent>
-        </Select>
+              <div className="flex-1 min-w-[200px]">
+                <Label>Уровень риска</Label>
+                <Select value={filterRisk} onValueChange={setFilterRisk}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Уровень риска" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все риски</SelectItem>
+                    <SelectItem value="Низкий">Низкий</SelectItem>
+                    <SelectItem value="Средний">Средний</SelectItem>
+                    <SelectItem value="Высокий">Высокий</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <Input placeholder="Поиск по названию..." className="max-w-xs" />
-      </div>
+              <div className="flex-1 min-w-[200px]">
+                <Label>Поиск</Label>
+                <Input 
+                  placeholder="Поиск по названию..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setFilterType('all');
+                    setFilterRisk('all');
+                    setSearchQuery('');
+                  }}
+                >
+                  Сбросить
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {investmentObjects.map((obj) => (
+        {filteredObjects.map((obj) => (
           <Card key={obj.id} className="hover:shadow-xl transition-all duration-300 hover:scale-105">
             <CardHeader>
               <div className="text-5xl mb-3">{obj.image}</div>
