@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import Icon from '@/components/ui/icon';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import type { PropertyObject, UserInvestment } from '@/types/investment';
 
 interface InvestmentObject {
   id: number;
@@ -37,12 +39,7 @@ const revenueData = [
   { month: 'Июн', revenue: 67000, profit: 21000 }
 ];
 
-const portfolioData = [
-  { name: 'Недвижимость', value: 45, color: '#0EA5E9' },
-  { name: 'Коммерция', value: 30, color: '#8B5CF6' },
-  { name: 'Стартапы', value: 15, color: '#F97316' },
-  { name: 'Облигации', value: 10, color: '#10B981' }
-];
+
 
 const getRiskColor = (risk: string) => {
   switch (risk) {
@@ -54,6 +51,70 @@ const getRiskColor = (risk: string) => {
 };
 
 const HomePage = ({ investmentObjects }: HomePageProps) => {
+  const [portfolioData, setPortfolioData] = useState<Array<{ name: string; value: number; color: string }>>([]);
+
+  useEffect(() => {
+    loadPortfolioData();
+    const interval = setInterval(loadPortfolioData, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadPortfolioData = () => {
+    try {
+      const savedInvestments = localStorage.getItem('investpro-user-investments');
+      const savedProperties = localStorage.getItem('investpro-properties');
+      
+      if (!savedInvestments || !savedProperties) {
+        setPortfolioData([
+          { name: 'Нет данных', value: 100, color: '#9CA3AF' }
+        ]);
+        return;
+      }
+
+      const investments: UserInvestment[] = JSON.parse(savedInvestments);
+      const properties: PropertyObject[] = JSON.parse(savedProperties);
+
+      const typeGroups: Record<string, number> = {};
+      
+      investments.forEach(inv => {
+        const property = properties.find(p => p.id === inv.propertyId);
+        if (!property) return;
+
+        let typeName = 'Другое';
+        if (property.propertyType === 'apartment' || property.propertyType === 'house') {
+          typeName = 'Жилая недвижимость';
+        } else if (property.propertyType === 'commercial') {
+          typeName = 'Коммерческая недвижимость';
+        } else if (property.propertyType === 'parking') {
+          typeName = 'Паркинг';
+        }
+
+        typeGroups[typeName] = (typeGroups[typeName] || 0) + inv.amount;
+      });
+
+      if (Object.keys(typeGroups).length === 0) {
+        setPortfolioData([
+          { name: 'Нет инвестиций', value: 100, color: '#9CA3AF' }
+        ]);
+        return;
+      }
+
+      const colors = ['#0EA5E9', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+      const data = Object.entries(typeGroups).map(([name, value], index) => ({
+        name,
+        value,
+        color: colors[index % colors.length],
+      }));
+
+      setPortfolioData(data);
+    } catch (error) {
+      console.error('Error loading portfolio data:', error);
+      setPortfolioData([
+        { name: 'Ошибка загрузки', value: 100, color: '#EF4444' }
+      ]);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
@@ -114,7 +175,7 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => portfolioData.length > 0 && portfolioData[0].name !== 'Нет данных' && portfolioData[0].name !== 'Нет инвестиций' ? `${name} ${(percent * 100).toFixed(0)}%` : name}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -123,7 +184,14 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value: number) => [
+                    portfolioData.length > 0 && portfolioData[0].name !== 'Нет данных' && portfolioData[0].name !== 'Нет инвестиций' 
+                      ? `₽${(value / 1000000).toFixed(2)}M` 
+                      : value,
+                    'Сумма'
+                  ]}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
