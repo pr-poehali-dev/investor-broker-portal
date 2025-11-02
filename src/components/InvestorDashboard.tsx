@@ -3,11 +3,19 @@ import InvestorStats from '@/components/investor/InvestorStats';
 import PortfolioCharts from '@/components/investor/PortfolioCharts';
 import InvestmentsList from '@/components/investor/InvestmentsList';
 import EditInvestmentDialog from '@/components/investor/EditInvestmentDialog';
+import PersonalFinancesTab from '@/components/investor/PersonalFinancesTab';
+import EducationTab from '@/components/investor/EducationTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { PropertyObject, UserInvestment } from '@/types/investment';
 
 interface InvestorDashboardProps {
   userName: string;
 }
+
+const getUserId = () => {
+  const savedUser = localStorage.getItem('investpro-user');
+  return savedUser ? JSON.parse(savedUser).email : 'user@example.com';
+};
 
 const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
   const PROPERTIES_KEY = 'investpro-properties';
@@ -234,6 +242,8 @@ const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
     saveInvestments(updated);
   };
 
+  const userId = getUserId();
+
   return (
     <div className="space-y-6">
       <div>
@@ -241,16 +251,42 @@ const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
         <p className="text-muted-foreground">Обзор ваших инвестиций в недвижимость</p>
       </div>
 
-      <InvestorStats stats={stats} />
+      <Tabs defaultValue="portfolio" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="portfolio">Портфель</TabsTrigger>
+          <TabsTrigger value="finances">Финансы</TabsTrigger>
+          <TabsTrigger value="objects">Мои объекты</TabsTrigger>
+          <TabsTrigger value="education">Обучение</TabsTrigger>
+        </TabsList>
 
-      <PortfolioCharts portfolioData={portfolioData} profitHistory={profitHistory} />
+        <TabsContent value="portfolio" className="space-y-6 mt-6">
+          <InvestorStats stats={stats} />
+          <PortfolioCharts portfolioData={portfolioData} profitHistory={profitHistory} />
+          <InvestmentsList
+            myInvestments={myInvestments}
+            properties={properties}
+            onEditInvestment={setEditingInvestment}
+            calculateProfit={calculateProfit}
+          />
+        </TabsContent>
 
-      <InvestmentsList
-        myInvestments={myInvestments}
-        properties={properties}
-        onEditInvestment={setEditingInvestment}
-        calculateProfit={calculateProfit}
-      />
+        <TabsContent value="finances" className="mt-6">
+          <PersonalFinancesTab userId={userId} />
+        </TabsContent>
+
+        <TabsContent value="objects" className="mt-6">
+          <InvestmentsList
+            myInvestments={myInvestments}
+            properties={properties}
+            onEditInvestment={setEditingInvestment}
+            calculateProfit={calculateProfit}
+          />
+        </TabsContent>
+
+        <TabsContent value="education" className="mt-6">
+          <EducationTab />
+        </TabsContent>
+      </Tabs>
 
       <EditInvestmentDialog
         investment={editingInvestment}
