@@ -78,8 +78,8 @@ const CalculatorPage = ({
 
             <div className="space-y-3">
               <div className="flex justify-between">
-                <label className="text-sm font-medium">Период (месяцев)</label>
-                <span className="text-sm font-semibold">{investmentPeriod}</span>
+                <label className="text-sm font-medium">Период (лет)</label>
+                <span className="text-sm font-semibold">{investmentPeriod / 12}</span>
               </div>
               <Slider
                 value={[investmentPeriod]}
@@ -90,8 +90,8 @@ const CalculatorPage = ({
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>6 мес</span>
-                <span>60 мес</span>
+                <span>0.5 лет</span>
+                <span>5 лет</span>
               </div>
             </div>
 
