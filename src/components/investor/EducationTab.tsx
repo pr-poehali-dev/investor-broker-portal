@@ -1,13 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { coursesData } from './education/courseData';
 import CourseDetailView from './education/CourseDetailView';
 import CoursesGrid from './education/CoursesGrid';
 import type { Course } from './education/courseData';
 
+const STORAGE_KEY = 'education_completed_lessons';
+
 const EducationTab = () => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(completedLessons)));
+  }, [completedLessons]);
 
   const handleLessonComplete = (lessonId: string) => {
     const newCompleted = new Set(completedLessons);
