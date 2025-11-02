@@ -30,7 +30,8 @@ const Header = ({ activeTab, onTabChange, user, onAuthClick, onLogout, onRoleSwi
             </div>
             <div>
               <h1 className="text-xl font-bold">InvestPro</h1>
-              <p className="text-xs text-muted-foreground">Платформа инвестиций</p>
+              <p className="text-xs text-muted-foreground">Платформа инвестиций в недвижимость
+</p>
             </div>
           </div>
           <nav className="hidden md:flex gap-1">
