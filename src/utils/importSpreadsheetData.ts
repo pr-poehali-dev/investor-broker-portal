@@ -30,7 +30,26 @@ export const importSpreadsheetProperties = (): PropertyObject[] => {
     { broker: 'Морозкин Юрий', brokerId: 'broker-morozkin', name: 'Апартаменты бизнес класс Уфа', price: '5200000', type: 'apartment', city: 'Уфа', partner: 'Морозкин', commission: '140000', expectedReturn: 70 },
   ];
 
-  const spreadsheetData = [...danilinData, ...morozkinData];
+  const loginovData = [
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Земля НН', price: '400000', type: 'land', city: 'Нижний Новгород', partner: 'Антипина И', commission: '100000', expectedReturn: 50 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Шерегеш', price: '1200000', type: 'commercial', city: 'Шерегеш', partner: 'Пивоварова', commission: '100000', expectedReturn: 35 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Да Га', price: '240000', type: 'land', city: 'Россия', partner: 'Кирай', commission: '25000', expectedReturn: 45 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Земская среда КП Светлица (Московская обл.)', price: '1500000', type: 'land', city: 'Московская область', partner: 'Светлана С.', commission: '150000', expectedReturn: 40 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Новостройки Москвы', price: '400000', type: 'apartment', city: 'Москва', partner: 'Светлана С.', commission: '50000', expectedReturn: 30 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Дубай', price: '14 млн.р', type: 'apartment', city: 'Дубай', partner: 'Ткаченко Юлия', commission: '560000', expectedReturn: 25 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'о. Бали', price: '14 млн.р', type: 'commercial', city: 'Бали', partner: 'Ткаченко Юлия', commission: '560000', expectedReturn: 28 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Дом на продажу', price: '1500000', type: 'house', city: 'Россия', partner: 'Замятина, Клыкова', commission: '180000', expectedReturn: 20 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Земли Петушки', price: '400000', type: 'land', city: 'Петушки', partner: 'Клыкова', commission: '50000', expectedReturn: 35 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Квартиры МСК Б, без ПВ сем', price: '300000', type: 'apartment', city: 'Москва', partner: '', commission: '50000', expectedReturn: 40 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Квартиры МСК, без ПВ сем', price: '100000', type: 'apartment', city: 'Москва', partner: '', commission: '50000', expectedReturn: 45 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Камбоджа (море)', price: '800000', type: 'apartment', city: 'Камбоджа', partner: 'Алена Ганза', commission: '200000', expectedReturn: 50 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Камбоджа (столица/центр)', price: '1400000', type: 'apartment', city: 'Камбоджа', partner: 'Алена Ганза', commission: '350000', expectedReturn: 48 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Камбоджа (коммерция)', price: '4 млн.р', type: 'commercial', city: 'Камбоджа', partner: 'Алена Ганза', commission: '800000', expectedReturn: 55 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'ГАБ в Москве', price: '3 млн.р', type: 'commercial', city: 'Москва', partner: 'Антон Л.', commission: '75000', expectedReturn: 22 },
+    { broker: 'Логинов Вадим', brokerId: 'broker-loginov', name: 'Парковки, Казань', price: '585000', type: 'parking', city: 'Казань', partner: 'Вадим Логинов', commission: '50000', expectedReturn: 30 },
+  ];
+
+  const spreadsheetData = [...danilinData, ...morozkinData, ...loginovData];
 
   const parsePrice = (priceStr: string): number => {
     const cleaned = priceStr.replace(/\s/g, '').replace(',', '.');
