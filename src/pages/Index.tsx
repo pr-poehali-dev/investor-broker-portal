@@ -7,6 +7,7 @@ import AuthModal from '@/components/AuthModal';
 import BrokerDashboard from '@/components/BrokerDashboard';
 import NewBrokerDashboard from '@/components/NewBrokerDashboard';
 import InvestorDashboard from '@/components/InvestorDashboard';
+import { loadSpreadsheetData } from '@/utils/importSpreadsheetData';
 import type { PropertyObject } from '@/types/investment';
 
 const Index = () => {
@@ -31,6 +32,8 @@ const Index = () => {
   const [allProperties, setAllProperties] = useState<PropertyObject[]>([]);
 
   useEffect(() => {
+    loadSpreadsheetData();
+    
     const loadAllProperties = () => {
       try {
         const saved = localStorage.getItem('investpro-properties');
