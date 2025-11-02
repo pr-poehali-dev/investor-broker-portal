@@ -27,8 +27,13 @@ const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 2000);
-    return () => clearInterval(interval);
+    const loadInterval = setInterval(loadData, 2000);
+    const growthInterval = setInterval(simulateGrowth, 60000);
+    
+    return () => {
+      clearInterval(loadInterval);
+      clearInterval(growthInterval);
+    };
   }, []);
 
   const loadData = () => {
@@ -80,6 +85,49 @@ const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
       setMyInvestments(investments);
     } catch (error) {
       console.error('Error saving investments:', error);
+    }
+  };
+
+  const simulateGrowth = () => {
+    try {
+      const savedInvestments = localStorage.getItem(INVESTMENTS_KEY);
+      if (!savedInvestments) return;
+
+      const savedProperties = localStorage.getItem(PROPERTIES_KEY);
+      if (!savedProperties) return;
+
+      const investments: UserInvestment[] = JSON.parse(savedInvestments);
+      const properties: PropertyObject[] = JSON.parse(savedProperties);
+
+      const updatedInvestments = investments.map((inv) => {
+        const property = properties.find(p => p.id === inv.propertyId);
+        if (!property) return inv;
+
+        const investmentDate = new Date(inv.date);
+        const now = new Date();
+        const daysPassed = Math.floor((now.getTime() - investmentDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysPassed < 1) return inv;
+
+        const annualReturn = property.investment.expectedReturn / 100;
+        const dailyReturn = annualReturn / 365;
+        
+        const growthFactor = Math.pow(1 + dailyReturn, daysPassed);
+        const newCurrentValue = inv.amount * growthFactor;
+        const newProfit = newCurrentValue - inv.amount;
+        const newRoi = (newProfit / inv.amount) * 100;
+
+        return {
+          ...inv,
+          currentValue: Math.round(newCurrentValue * 100) / 100,
+          profit: Math.round(newProfit * 100) / 100,
+          roi: Math.round(newRoi * 100) / 100,
+        };
+      });
+
+      localStorage.setItem(INVESTMENTS_KEY, JSON.stringify(updatedInvestments));
+    } catch (error) {
+      console.error('Error simulating growth:', error);
     }
   };
 
