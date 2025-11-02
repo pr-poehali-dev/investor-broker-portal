@@ -1,151 +1,202 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Icon from '@/components/ui/icon';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import type { PropertyObject, UserInvestment } from '@/types/investment';
 
 interface InvestorDashboardProps {
   userName: string;
 }
 
-interface Investment {
-  id: number;
-  title: string;
-  location: string;
-  type: string;
-  invested: number;
-  currentValue: number;
-  expectedReturn: number;
-  progress: number;
-  image: string;
-  broker: string;
-  revenue: number;
-  monthlyGrowth: number;
-}
-
 const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
-  const [myInvestments, setMyInvestments] = useState<Investment[]>([
-    {
-      id: 1,
-      title: 'ЖК «Северный квартал»',
-      location: 'Москва, САО',
-      type: 'Жилая недвижимость',
-      invested: 500000,
-      currentValue: 567000,
-      expectedReturn: 22,
-      progress: 67,
-      image: '🏢',
-      broker: 'Петров Иван',
-      revenue: 67000,
-      monthlyGrowth: 5600
-    },
-    {
-      id: 2,
-      title: 'ТЦ «Метрополис»',
-      location: 'Санкт-Петербург',
-      type: 'Коммерческая недвижимость',
-      invested: 1000000,
-      currentValue: 1180000,
-      expectedReturn: 18,
-      progress: 84,
-      image: '🏬',
-      broker: 'Сидорова Мария',
-      revenue: 180000,
-      monthlyGrowth: 15000
-    },
-    {
-      id: 3,
-      title: 'Апарт-отель «Прибрежный»',
-      location: 'Сочи',
-      type: 'Жилая недвижимость',
-      invested: 750000,
-      currentValue: 825000,
-      expectedReturn: 25,
-      progress: 42,
-      image: '🏨',
-      broker: 'Козлов Алексей',
-      revenue: 75000,
-      monthlyGrowth: 6250
-    }
-  ]);
+  const PROPERTIES_KEY = 'investpro-properties';
+  const INVESTMENTS_KEY = 'investpro-user-investments';
+  const USER_KEY = 'investpro-user';
 
-  const [editingInvestment, setEditingInvestment] = useState<Investment | null>(null);
-  const [selectedBroker, setSelectedBroker] = useState<string | null>(null);
+  const [properties, setProperties] = useState<PropertyObject[]>([]);
+  const [myInvestments, setMyInvestments] = useState<UserInvestment[]>([]);
+  const [editingInvestment, setEditingInvestment] = useState<UserInvestment | null>(null);
   const [actionType, setActionType] = useState<'add' | 'withdraw' | null>(null);
   const [actionAmount, setActionAmount] = useState('');
 
-  const totalInvested = myInvestments.reduce((sum, inv) => sum + inv.invested, 0);
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadData = () => {
+    try {
+      const savedProperties = localStorage.getItem(PROPERTIES_KEY);
+      if (savedProperties) {
+        const parsed = JSON.parse(savedProperties);
+        setProperties(parsed.map((p: any) => ({
+          ...p,
+          metadata: {
+            ...p.metadata,
+            createdAt: new Date(p.metadata.createdAt),
+            updatedAt: new Date(p.metadata.updatedAt),
+          },
+        })));
+      }
+
+      const savedUser = localStorage.getItem(USER_KEY);
+      const userId = savedUser ? JSON.parse(savedUser).email : 'user@example.com';
+
+      const savedInvestments = localStorage.getItem(INVESTMENTS_KEY);
+      if (savedInvestments) {
+        const parsed = JSON.parse(savedInvestments);
+        const userInvestments = parsed
+          .filter((inv: any) => inv.userId === userId)
+          .map((inv: any) => ({
+            ...inv,
+            date: new Date(inv.date),
+          }));
+        setMyInvestments(userInvestments);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
+  const saveInvestments = (investments: UserInvestment[]) => {
+    try {
+      const allInvestments = localStorage.getItem(INVESTMENTS_KEY);
+      const parsed = allInvestments ? JSON.parse(allInvestments) : [];
+      
+      const savedUser = localStorage.getItem(USER_KEY);
+      const userId = savedUser ? JSON.parse(savedUser).email : 'user@example.com';
+      
+      const otherInvestments = parsed.filter((inv: any) => inv.userId !== userId);
+      const updated = [...otherInvestments, ...investments];
+      
+      localStorage.setItem(INVESTMENTS_KEY, JSON.stringify(updated));
+      setMyInvestments(investments);
+    } catch (error) {
+      console.error('Error saving investments:', error);
+    }
+  };
+
+  const totalInvested = myInvestments.reduce((sum, inv) => sum + inv.amount, 0);
   const totalCurrentValue = myInvestments.reduce((sum, inv) => sum + inv.currentValue, 0);
   const totalProfit = totalCurrentValue - totalInvested;
-  const totalRevenue = myInvestments.reduce((sum, inv) => sum + inv.revenue, 0);
-  const avgROI = ((totalProfit / totalInvested) * 100).toFixed(1);
+  const avgROI = totalInvested > 0 ? ((totalProfit / totalInvested) * 100).toFixed(1) : '0.0';
+
+  const getInvestedProperties = (): PropertyObject[] => {
+    const investedPropertyIds = new Set(myInvestments.map(inv => inv.propertyId));
+    return properties.filter(p => investedPropertyIds.has(p.id));
+  };
+
+  const calculatePortfolioData = () => {
+    const investedProperties = getInvestedProperties();
+    
+    const typeGroups: Record<string, number> = {};
+    investedProperties.forEach(p => {
+      const investment = myInvestments.find(inv => inv.propertyId === p.id);
+      if (investment) {
+        const typeName = 
+          p.propertyType === 'apartment' || p.propertyType === 'house' ? 'Жилая недвижимость' :
+          p.propertyType === 'commercial' ? 'Коммерческая недвижимость' :
+          p.propertyType === 'parking' ? 'Паркинг' : 'Другое';
+        
+        typeGroups[typeName] = (typeGroups[typeName] || 0) + investment.amount;
+      }
+    });
+
+    const colors = ['#0EA5E9', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
+    return Object.entries(typeGroups).map(([name, value], index) => ({
+      name,
+      value,
+      color: colors[index % colors.length],
+    }));
+  };
+
+  const calculateProfitHistory = () => {
+    const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'];
+    return months.map((month, index) => ({
+      month,
+      profit: myInvestments.reduce((sum, inv) => {
+        const monthlyProfit = (inv.profit / 6) * (index + 1);
+        return sum + monthlyProfit;
+      }, 0),
+    }));
+  };
+
+  const portfolioData = calculatePortfolioData();
+  const profitHistory = calculateProfitHistory();
 
   const stats = [
-    { label: 'Всего инвестировано', value: `₽${(totalInvested / 1000000).toFixed(1)}M`, change: '+15%', icon: 'Wallet', color: 'text-primary' },
-    { label: 'Активных объектов', value: myInvestments.length, change: '+2', icon: 'Building2', color: 'text-secondary' },
-    { label: 'Текущая прибыль', value: `₽${(totalProfit / 1000).toFixed(0)}K`, change: '+12.2%', icon: 'TrendingUp', color: 'text-green-600' },
-    { label: 'Средний ROI', value: `${avgROI}%`, change: '+1.3%', icon: 'Percent', color: 'text-primary' },
-    { label: 'Выручка', value: `₽${(totalRevenue / 1000).toFixed(0)}K`, change: `+${(myInvestments.reduce((sum, inv) => sum + inv.monthlyGrowth, 0) / 1000).toFixed(1)}K/мес`, icon: 'DollarSign', color: 'text-green-600' }
-  ];
-
-  const portfolioData = [
-    { name: 'Жилая недвижимость', value: 60, color: '#0EA5E9' },
-    { name: 'Коммерческая недвижимость', value: 40, color: '#8B5CF6' }
-  ];
-
-  const profitHistory = [
-    { month: 'Янв', profit: 15000 },
-    { month: 'Фев', profit: 28000 },
-    { month: 'Мар', profit: 35000 },
-    { month: 'Апр', profit: 42000 },
-    { month: 'Май', profit: 38000 },
-    { month: 'Июн', profit: 47000 }
+    { label: 'Всего инвестировано', value: totalInvested > 0 ? `₽${(totalInvested / 1000000).toFixed(1)}M` : '₽0', change: myInvestments.length > 0 ? `${myInvestments.length} объект(ов)` : 'Нет инвестиций', icon: 'Wallet', color: 'text-primary' },
+    { label: 'Активных объектов', value: myInvestments.length, change: myInvestments.length > 0 ? 'В портфеле' : 'Начните инвестировать', icon: 'Building2', color: 'text-secondary' },
+    { label: 'Текущая прибыль', value: totalProfit > 0 ? `₽${(totalProfit / 1000).toFixed(0)}K` : '₽0', change: totalProfit > 0 ? `+${((totalProfit / totalInvested) * 100).toFixed(1)}%` : 'Без прибыли', icon: 'TrendingUp', color: totalProfit >= 0 ? 'text-green-600' : 'text-red-600' },
+    { label: 'Средний ROI', value: `${avgROI}%`, change: totalProfit >= 0 ? 'Доходность' : 'Убыток', icon: 'Percent', color: 'text-primary' },
+    { label: 'Текущая стоимость', value: totalCurrentValue > 0 ? `₽${(totalCurrentValue / 1000000).toFixed(1)}M` : '₽0', change: totalCurrentValue > totalInvested ? `+₽${((totalCurrentValue - totalInvested) / 1000).toFixed(0)}K` : 'Без роста', icon: 'DollarSign', color: 'text-green-600' }
   ];
 
   const calculateProfit = (invested: number, currentValue: number) => {
     const profit = currentValue - invested;
-    const percentage = ((profit / invested) * 100).toFixed(1);
+    const percentage = invested > 0 ? ((profit / invested) * 100).toFixed(1) : '0.0';
     return { profit, percentage };
   };
 
-  const handleAddFunds = (investmentId: number) => {
+  const handleAddFunds = (investmentId: string) => {
     if (!actionAmount) return;
     const amount = parseFloat(actionAmount);
-    setMyInvestments(prev => prev.map(inv => {
+    if (isNaN(amount) || amount <= 0) return;
+
+    const updated = myInvestments.map(inv => {
       if (inv.id === investmentId) {
+        const newAmount = inv.amount + amount;
+        const newCurrentValue = inv.currentValue + amount;
         return {
           ...inv,
-          invested: inv.invested + amount,
-          currentValue: inv.currentValue + amount
+          amount: newAmount,
+          currentValue: newCurrentValue,
+          profit: newCurrentValue - newAmount,
+          roi: ((newCurrentValue - newAmount) / newAmount) * 100,
         };
       }
       return inv;
-    }));
+    });
+    
+    saveInvestments(updated);
     setActionType(null);
     setActionAmount('');
     setEditingInvestment(null);
   };
 
-  const handleWithdraw = (investmentId: number) => {
+  const handleWithdraw = (investmentId: string) => {
     if (!actionAmount) return;
     const amount = parseFloat(actionAmount);
-    setMyInvestments(prev => prev.map(inv => {
+    if (isNaN(amount) || amount <= 0) return;
+
+    const updated = myInvestments.map(inv => {
       if (inv.id === investmentId && inv.currentValue >= amount) {
+        const newCurrentValue = inv.currentValue - amount;
         return {
           ...inv,
-          currentValue: inv.currentValue - amount
+          currentValue: newCurrentValue,
+          profit: newCurrentValue - inv.amount,
+          roi: ((newCurrentValue - inv.amount) / inv.amount) * 100,
         };
       }
       return inv;
-    }));
+    });
+    
+    saveInvestments(updated);
     setActionType(null);
     setActionAmount('');
     setEditingInvestment(null);
+  };
+
+  const getPropertyById = (propertyId: string): PropertyObject | undefined => {
+    return properties.find(p => p.id === propertyId);
   };
 
   return (
@@ -166,247 +217,261 @@ const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-green-600 mt-1">{stat.change}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Структура портфеля</CardTitle>
-            <CardDescription>Распределение по типам недвижимости</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={portfolioData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={90}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {portfolioData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {myInvestments.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {portfolioData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Структура портфеля</CardTitle>
+                <CardDescription>Распределение по типам недвижимости</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={portfolioData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, value }) => `${name} ₽${(value / 1000000).toFixed(1)}M`}
+                      outerRadius={90}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {portfolioData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => `₽${(value / 1000000).toFixed(2)}M`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>История прибыли</CardTitle>
-            <CardDescription>Динамика доходов за 6 месяцев</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={profitHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip formatter={(value: number) => `₽${value.toLocaleString()}`} />
-                <Line
-                  type="monotone"
-                  dataKey="profit"
-                  stroke="#0EA5E9"
-                  strokeWidth={3}
-                  dot={{ fill: '#0EA5E9', r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+          {profitHistory.some(h => h.profit > 0) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>История прибыли</CardTitle>
+                <CardDescription>Динамика доходов за 6 месяцев</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={profitHistory}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="month" stroke="#6b7280" />
+                    <YAxis stroke="#6b7280" />
+                    <Tooltip formatter={(value: number) => `₽${value.toLocaleString()}`} />
+                    <Line
+                      type="monotone"
+                      dataKey="profit"
+                      stroke="#0EA5E9"
+                      strokeWidth={3}
+                      dot={{ fill: '#0EA5E9', r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle>Мои инвестиции</CardTitle>
-          <CardDescription>Активные вложения в недвижимость</CardDescription>
+          <CardDescription>
+            {myInvestments.length > 0 
+              ? 'Активные вложения в недвижимость'
+              : 'У вас пока нет инвестиций. Перейдите в раздел "Объекты" чтобы начать инвестировать.'}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {myInvestments.map((inv) => {
-              const { profit, percentage } = calculateProfit(inv.invested, inv.currentValue);
-              return (
-                <div key={inv.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-4">
-                    <div className="text-4xl">{inv.image}</div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{inv.title}</h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
-                        <Icon name="MapPin" size={14} />
-                        {inv.location}
-                      </p>
-                      <Badge variant="secondary" className="mb-3">{inv.type}</Badge>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3 text-sm">
+          {myInvestments.length === 0 ? (
+            <div className="text-center py-12">
+              <Icon name="TrendingUp" size={48} className="mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">Начните инвестировать в недвижимость</p>
+              <p className="text-sm text-muted-foreground">
+                Изучите доступные объекты во вкладке "Объекты" и выберите подходящий вариант
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {myInvestments.map((investment) => {
+                const property = getPropertyById(investment.propertyId);
+                if (!property) return null;
+
+                const { profit, percentage } = calculateProfit(investment.amount, investment.currentValue);
+                const isProfit = profit >= 0;
+
+                return (
+                  <Card key={investment.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex gap-4 flex-1">
+                          <div className="text-5xl">
+                            {property.propertyType === 'apartment' || property.propertyType === 'house' ? '🏢' :
+                             property.propertyType === 'commercial' ? '🏬' :
+                             property.propertyType === 'parking' ? '🚗' : '🏗️'}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-bold mb-1">{investment.propertyTitle}</h3>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mb-2">
+                              <Icon name="MapPin" size={14} />
+                              {property.location.city}{property.location.district ? `, ${property.location.district}` : ''}
+                            </p>
+                            <div className="flex gap-2 flex-wrap">
+                              <Badge variant="outline">
+                                {property.propertyType === 'apartment' ? 'Квартира' :
+                                 property.propertyType === 'house' ? 'Дом' :
+                                 property.propertyType === 'commercial' ? 'Коммерция' :
+                                 property.propertyType === 'parking' ? 'Паркинг' : 'Другое'}
+                              </Badge>
+                              <Badge variant="secondary">{property.brokerName}</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         <div>
-                          <span className="text-muted-foreground">Инвестировано:</span>
-                          <p className="font-semibold">₽{(inv.invested / 1000).toFixed(0)}K</p>
+                          <p className="text-sm text-muted-foreground mb-1">Вложено</p>
+                          <p className="font-bold">₽{investment.amount.toLocaleString()}</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Текущая стоимость:</span>
-                          <p className="font-semibold text-primary">₽{(inv.currentValue / 1000).toFixed(0)}K</p>
+                          <p className="text-sm text-muted-foreground mb-1">Текущая стоимость</p>
+                          <p className="font-bold">₽{investment.currentValue.toLocaleString()}</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Прибыль:</span>
-                          <p className="font-semibold text-green-600">+₽{(profit / 1000).toFixed(0)}K ({percentage}%)</p>
+                          <p className="text-sm text-muted-foreground mb-1">Прибыль</p>
+                          <p className={`font-bold ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
+                            {isProfit ? '+' : ''}₽{profit.toLocaleString()}
+                          </p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Выручка:</span>
-                          <p className="font-semibold text-green-600">₽{(inv.revenue / 1000).toFixed(0)}K</p>
-                          <p className="text-xs text-muted-foreground">+₽{(inv.monthlyGrowth / 1000).toFixed(1)}K/мес</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Брокер:</span>
-                          <p className="font-semibold text-primary cursor-pointer hover:underline" onClick={() => setSelectedBroker(inv.broker)}>
-                            {inv.broker}
+                          <p className="text-sm text-muted-foreground mb-1">ROI</p>
+                          <p className={`font-bold ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
+                            {isProfit ? '+' : ''}{percentage}%
                           </p>
                         </div>
                       </div>
-                      
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">Прогресс проекта</span>
-                          <span className="font-semibold">{inv.progress}%</span>
+
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs mb-2">
+                          <span className="text-muted-foreground">Прогресс объекта</span>
+                          <span className="font-semibold">
+                            {Math.round((property.investment.currentInvestment / property.investment.targetInvestment) * 100)}%
+                          </span>
                         </div>
-                        <Progress value={inv.progress} className="h-2" />
+                        <Progress 
+                          value={(property.investment.currentInvestment / property.investment.targetInvestment) * 100} 
+                          className="h-2" 
+                        />
                       </div>
 
-                      <div className="flex gap-2 mt-3">
-                        <Dialog open={editingInvestment?.id === inv.id && actionType === 'add'} onOpenChange={(open) => {
-                          if (!open) {
-                            setEditingInvestment(null);
-                            setActionType(null);
-                            setActionAmount('');
-                          }
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                              setEditingInvestment(inv);
-                              setActionType('add');
-                            }}>
-                              <Icon name="Plus" size={16} />
-                              Довложить
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Довложить средства</DialogTitle>
-                              <DialogDescription>
-                                Увеличьте инвестицию в проект "{inv.title}"
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label>Сумма довложения (₽)</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="100000"
-                                  value={actionAmount}
-                                  onChange={(e) => setActionAmount(e.target.value)}
-                                />
-                              </div>
-                              <Button onClick={() => handleAddFunds(inv.id)} className="w-full">
-                                Подтвердить
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={editingInvestment?.id === inv.id && actionType === 'withdraw'} onOpenChange={(open) => {
-                          if (!open) {
-                            setEditingInvestment(null);
-                            setActionType(null);
-                            setActionAmount('');
-                          }
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2" onClick={() => {
-                              setEditingInvestment(inv);
-                              setActionType('withdraw');
-                            }}>
-                              <Icon name="TrendingDown" size={16} />
-                              Вывести
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Вывести средства</DialogTitle>
-                              <DialogDescription>
-                                Выведите часть инвестиции из проекта "{inv.title}"
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label>Сумма вывода (₽)</Label>
-                                <Input
-                                  type="number"
-                                  placeholder="50000"
-                                  value={actionAmount}
-                                  onChange={(e) => setActionAmount(e.target.value)}
-                                />
-                                <p className="text-sm text-muted-foreground">
-                                  Доступно: ₽{(inv.currentValue / 1000).toFixed(0)}K
-                                </p>
-                              </div>
-                              <Button onClick={() => handleWithdraw(inv.id)} className="w-full">
-                                Подтвердить вывод
-                              </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-
-                        <Button variant="outline" size="sm" className="gap-2" onClick={() => setSelectedBroker(inv.broker)}>
-                          <Icon name="MessageSquare" size={16} />
-                          Связаться с брокером
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            setEditingInvestment(investment);
+                            setActionType('add');
+                          }}
+                        >
+                          <Icon name="Plus" size={16} className="mr-1" />
+                          Довложить
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => {
+                            setEditingInvestment(investment);
+                            setActionType('withdraw');
+                          }}
+                        >
+                          <Icon name="Minus" size={16} className="mr-1" />
+                          Вывести
                         </Button>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Dialog open={selectedBroker !== null} onOpenChange={() => setSelectedBroker(null)}>
+      <Dialog 
+        open={!!editingInvestment && !!actionType} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingInvestment(null);
+            setActionType(null);
+            setActionAmount('');
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Контакты брокера</DialogTitle>
+            <DialogTitle>
+              {actionType === 'add' ? 'Довложить средства' : 'Вывести средства'}
+            </DialogTitle>
             <DialogDescription>
-              Информация о брокере: {selectedBroker}
+              {editingInvestment?.propertyTitle}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-3">
-              <Icon name="User" size={20} className="text-primary" />
-              <div>
-                <p className="font-semibold">{selectedBroker}</p>
-                <p className="text-sm text-muted-foreground">Сертифицированный брокер</p>
-              </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Сумма (₽)</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0"
+                value={actionAmount}
+                onChange={(e) => setActionAmount(e.target.value)}
+              />
+              {actionType === 'withdraw' && editingInvestment && (
+                <p className="text-xs text-muted-foreground">
+                  Доступно для вывода: ₽{editingInvestment.currentValue.toLocaleString()}
+                </p>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              <Icon name="Mail" size={20} className="text-primary" />
-              <p className="text-sm">{selectedBroker?.toLowerCase().replace(' ', '.')}@investpro.ru</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setEditingInvestment(null);
+                  setActionType(null);
+                  setActionAmount('');
+                }}
+              >
+                Отмена
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  if (editingInvestment) {
+                    if (actionType === 'add') {
+                      handleAddFunds(editingInvestment.id);
+                    } else {
+                      handleWithdraw(editingInvestment.id);
+                    }
+                  }
+                }}
+              >
+                Подтвердить
+              </Button>
             </div>
-            <div className="flex items-center gap-3">
-              <Icon name="Phone" size={20} className="text-primary" />
-              <p className="text-sm">+7 (495) 123-45-67</p>
-            </div>
-            <Button className="w-full gap-2">
-              <Icon name="MessageSquare" size={18} />
-              Написать брокеру
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

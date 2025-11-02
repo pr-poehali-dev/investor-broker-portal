@@ -206,3 +206,15 @@ export interface PropertyRecommendation {
   strategy: InvestmentStrategy;
   projectedReturn: number;
 }
+
+export interface UserInvestment {
+  id: string;
+  userId: string;
+  propertyId: string;
+  propertyTitle: string;
+  amount: number;
+  date: Date;
+  currentValue: number;
+  profit: number;
+  roi: number;
+}
