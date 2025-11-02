@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import HomePage from '@/components/HomePage';
 import ObjectsPage from '@/components/ObjectsPage';
@@ -14,7 +14,18 @@ const Index = () => {
   const [investmentPeriod, setInvestmentPeriod] = useState(12);
   const [expectedReturn, setExpectedReturn] = useState(15);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string; role: 'investor' | 'broker' } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; role: 'investor' | 'broker' } | null>(() => {
+    const savedUser = localStorage.getItem('investpro-user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('investpro-user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('investpro-user');
+    }
+  }, [user]);
 
   const investmentObjects = [
     {
@@ -77,6 +88,15 @@ const Index = () => {
     setActiveTab('home');
   };
 
+  const handleRoleSwitch = () => {
+    if (user) {
+      setUser({
+        ...user,
+        role: user.role === 'broker' ? 'investor' : 'broker',
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header
@@ -85,6 +105,7 @@ const Index = () => {
         user={user}
         onAuthClick={() => setShowAuthModal(true)}
         onLogout={handleLogout}
+        onRoleSwitch={handleRoleSwitch}
       />
 
       <div className="container mx-auto px-6 py-8">
