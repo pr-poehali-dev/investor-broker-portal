@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
 import TelegramPublisher from '@/components/TelegramPublisher';
 import PropertyStats from '@/components/property/PropertyStats';
@@ -125,6 +126,7 @@ const PropertyManager = ({ brokerId, brokerName }: PropertyManagerProps) => {
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<PropertyObject | null>(null);
   const [formData, setFormData] = useState<Partial<PropertyObject>>({});
+  const [selectedBroker, setSelectedBroker] = useState<string>('all');
 
   const getEmptyProperty = (): Partial<PropertyObject> => ({
     title: '',
@@ -281,18 +283,31 @@ const PropertyManager = ({ brokerId, brokerName }: PropertyManagerProps) => {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const getUniqueBrokers = () => {
+    const brokers = new Set<string>();
+    properties.forEach(p => {
+      brokers.add(p.brokerName);
+    });
+    return Array.from(brokers).sort();
+  };
+
+  const filteredProperties = selectedBroker === 'all' 
+    ? properties 
+    : properties.filter(p => p.brokerName === selectedBroker);
+
   const calculateStats = () => {
-    const totalProperties = properties.length;
-    const activeProperties = properties.filter(p => p.status === 'active').length;
-    const totalInvestmentRaised = properties.reduce((sum, p) => sum + p.investment.currentInvestment, 0);
-    const avgReturn = properties.length > 0
-      ? properties.reduce((sum, p) => sum + p.investment.expectedReturn, 0) / properties.length
+    const totalProperties = filteredProperties.length;
+    const activeProperties = filteredProperties.filter(p => p.status === 'active').length;
+    const totalInvestmentRaised = filteredProperties.reduce((sum, p) => sum + p.investment.currentInvestment, 0);
+    const avgReturn = filteredProperties.length > 0
+      ? filteredProperties.reduce((sum, p) => sum + p.investment.expectedReturn, 0) / filteredProperties.length
       : 0;
 
     return { totalProperties, activeProperties, totalInvestmentRaised, avgReturn };
   };
 
   const stats = calculateStats();
+  const uniqueBrokers = getUniqueBrokers();
 
   const handleTelegramPublish = (published: boolean, url?: string) => {
     if (selectedProperty) {
@@ -335,14 +350,34 @@ const PropertyManager = ({ brokerId, brokerName }: PropertyManagerProps) => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Мои объекты недвижимости</CardTitle>
-          <CardDescription>
-            Управляйте своими инвестиционными объектами
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Мои объекты недвижимости</CardTitle>
+              <CardDescription>
+                Управляйте своими инвестиционными объектами
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Icon name="Filter" size={18} className="text-muted-foreground" />
+              <Select value={selectedBroker} onValueChange={setSelectedBroker}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Все брокеры" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все брокеры</SelectItem>
+                  {uniqueBrokers.map(broker => (
+                    <SelectItem key={broker} value={broker}>
+                      {broker}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {properties.map((property) => (
+            {filteredProperties.map((property) => (
               <PropertyCard
                 key={property.id}
                 property={property}
