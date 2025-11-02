@@ -94,9 +94,8 @@ const InvestorDashboard = ({ userName }: InvestorDashboardProps) => {
   ];
 
   const portfolioData = [
-    { name: 'Жилая недвижимость', value: 55, color: '#0EA5E9' },
-    { name: 'Коммерческая недвижимость', value: 35, color: '#8B5CF6' },
-    { name: 'Апартаменты', value: 10, color: '#F97316' }
+    { name: 'Жилая недвижимость', value: 60, color: '#0EA5E9' },
+    { name: 'Коммерческая недвижимость', value: 40, color: '#8B5CF6' }
   ];
 
   const profitHistory = [
