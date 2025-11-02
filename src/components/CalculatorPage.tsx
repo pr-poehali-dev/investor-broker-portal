@@ -85,13 +85,13 @@ const CalculatorPage = ({
                 value={[investmentPeriod]}
                 onValueChange={(value) => onPeriodChange(value[0])}
                 min={6}
-                max={60}
+                max={600}
                 step={6}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>0.5 лет</span>
-                <span>5 лет</span>
+                <span>50 лет</span>
               </div>
             </div>
 
