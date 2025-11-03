@@ -23,21 +23,7 @@ interface HomePageProps {
   investmentObjects: InvestmentObject[];
 }
 
-const dashboardStats = [
-  { label: 'Активных объектов', value: '247', change: '+12%', icon: 'Building2', color: 'text-primary' },
-  { label: 'Общий объем', value: '₽1.2B', change: '+8.3%', icon: 'TrendingUp', color: 'text-secondary' },
-  { label: 'Средняя доходность', value: '18.5%', change: '+2.1%', icon: 'Percent', color: 'text-primary' },
-  { label: 'Инвесторов', value: '1,834', change: '+156', icon: 'Users', color: 'text-secondary' }
-];
 
-const revenueData = [
-  { month: 'Янв', revenue: 45000, profit: 12000 },
-  { month: 'Фев', revenue: 52000, profit: 15000 },
-  { month: 'Мар', revenue: 48000, profit: 13500 },
-  { month: 'Апр', revenue: 61000, profit: 18000 },
-  { month: 'Май', revenue: 55000, profit: 16500 },
-  { month: 'Июн', revenue: 67000, profit: 21000 }
-];
 
 
 
@@ -52,12 +38,92 @@ const getRiskColor = (risk: string) => {
 
 const HomePage = ({ investmentObjects }: HomePageProps) => {
   const [portfolioData, setPortfolioData] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [dashboardStats, setDashboardStats] = useState([
+    { label: 'Активных объектов', value: '0', change: '0%', icon: 'Building2', color: 'text-primary' },
+    { label: 'Общий объем', value: '₽0', change: '0%', icon: 'TrendingUp', color: 'text-secondary' },
+    { label: 'Средняя доходность', value: '0%', change: '0%', icon: 'Percent', color: 'text-primary' },
+    { label: 'Инвесторов', value: '0', change: '0', icon: 'Users', color: 'text-secondary' }
+  ]);
+  const [revenueData, setRevenueData] = useState<Array<{ month: string; revenue: number; profit: number }>>([]);
 
   useEffect(() => {
-    loadPortfolioData();
-    const interval = setInterval(loadPortfolioData, 2000);
+    loadAllData();
+    const interval = setInterval(loadAllData, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  const loadAllData = () => {
+    loadPortfolioData();
+    loadDashboardStats();
+    loadRevenueData();
+  };
+
+  const loadDashboardStats = () => {
+    try {
+      const savedProperties = localStorage.getItem('investpro-properties');
+      const savedInvestments = localStorage.getItem('investpro-user-investments');
+      
+      if (!savedProperties) return;
+      
+      const properties: PropertyObject[] = JSON.parse(savedProperties);
+      const investments: UserInvestment[] = savedInvestments ? JSON.parse(savedInvestments) : [];
+      
+      const activeObjects = properties.filter(p => p.fundingProgress < 100).length;
+      const totalVolume = investments.reduce((sum, inv) => sum + inv.amount, 0);
+      const avgReturn = properties.length > 0 
+        ? properties.reduce((sum, p) => sum + p.expectedReturn, 0) / properties.length 
+        : 0;
+      const investorsCount = new Set(investments.map(inv => inv.userId)).size;
+      
+      setDashboardStats([
+        { label: 'Активных объектов', value: activeObjects.toString(), change: '+12%', icon: 'Building2', color: 'text-primary' },
+        { label: 'Общий объем', value: `₽${(totalVolume / 1000000).toFixed(1)}M`, change: '+8.3%', icon: 'TrendingUp', color: 'text-secondary' },
+        { label: 'Средняя доходность', value: `${avgReturn.toFixed(1)}%`, change: '+2.1%', icon: 'Percent', color: 'text-primary' },
+        { label: 'Инвесторов', value: investorsCount.toString(), change: `+${Math.floor(investorsCount * 0.1)}`, icon: 'Users', color: 'text-secondary' }
+      ]);
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
+    }
+  };
+
+  const loadRevenueData = () => {
+    try {
+      const savedInvestments = localStorage.getItem('investpro-user-investments');
+      const savedProperties = localStorage.getItem('investpro-properties');
+      
+      if (!savedInvestments || !savedProperties) {
+        setRevenueData([]);
+        return;
+      }
+
+      const investments: UserInvestment[] = JSON.parse(savedInvestments);
+      const properties: PropertyObject[] = JSON.parse(savedProperties);
+      
+      const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'];
+      const data = months.map((month, index) => {
+        const monthlyRevenue = investments
+          .filter(inv => {
+            const invDate = new Date(inv.date);
+            return invDate.getMonth() === index;
+          })
+          .reduce((sum, inv) => {
+            const property = properties.find(p => p.id === inv.propertyId);
+            return sum + (property ? inv.amount * (property.expectedReturn / 100) : 0);
+          }, 0);
+        
+        return {
+          month,
+          revenue: Math.round(monthlyRevenue * 1.2),
+          profit: Math.round(monthlyRevenue)
+        };
+      });
+      
+      setRevenueData(data);
+    } catch (error) {
+      console.error('Error loading revenue data:', error);
+      setRevenueData([]);
+    }
+  };
 
   const loadPortfolioData = () => {
     try {
