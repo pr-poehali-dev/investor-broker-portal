@@ -12,8 +12,12 @@ import type { PropertyObject } from '@/types/investment';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 300);
+    
     const titles: Record<string, string> = {
       home: 'Инвестиционный портал недвижимости',
       objects: 'Объекты - Инвестиционный портал',
@@ -21,6 +25,8 @@ const Index = () => {
       dashboard: 'Личный кабинет - Инвестиционный портал'
     };
     document.title = titles[activeTab] || 'Инвестиционный портал недвижимости';
+    
+    return () => clearTimeout(timer);
   }, [activeTab]);
   const [investmentAmount, setInvestmentAmount] = useState(1000000);
   const [investmentPeriod, setInvestmentPeriod] = useState(12);
@@ -159,35 +165,46 @@ const Index = () => {
         onRoleSwitch={handleRoleSwitch}
       />
 
-      <div className="container mx-auto px-6 py-8">
-        {activeTab === 'home' && (
-          <HomePage investmentObjects={investmentObjects} />
+      <div className="container mx-auto px-6 py-8 relative">
+        {isTransitioning && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-muted-foreground">Загрузка...</p>
+            </div>
+          </div>
         )}
+        
+        <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+          {activeTab === 'home' && (
+            <HomePage investmentObjects={investmentObjects} />
+          )}
 
-        {activeTab === 'objects' && (
-          <ObjectsPage investmentObjects={investmentObjects} />
-        )}
+          {activeTab === 'objects' && (
+            <ObjectsPage investmentObjects={investmentObjects} />
+          )}
 
-        {activeTab === 'calculator' && (
-          <CalculatorPage
-            investmentAmount={investmentAmount}
-            investmentPeriod={investmentPeriod}
-            expectedReturn={expectedReturn}
-            onAmountChange={setInvestmentAmount}
-            onPeriodChange={setInvestmentPeriod}
-            onReturnChange={setExpectedReturn}
-          />
-        )}
+          {activeTab === 'calculator' && (
+            <CalculatorPage
+              investmentAmount={investmentAmount}
+              investmentPeriod={investmentPeriod}
+              expectedReturn={expectedReturn}
+              onAmountChange={setInvestmentAmount}
+              onPeriodChange={setInvestmentPeriod}
+              onReturnChange={setExpectedReturn}
+            />
+          )}
 
-        {activeTab === 'dashboard' && user && (
-          <>
-            {user.role === 'broker' ? (
-              <NewBrokerDashboard userName={user.name} brokerId={`broker-${Date.now()}`} />
-            ) : (
-              <InvestorDashboard userName={user.name} />
-            )}
-          </>
-        )}
+          {activeTab === 'dashboard' && user && (
+            <>
+              {user.role === 'broker' ? (
+                <NewBrokerDashboard userName={user.name} brokerId={`broker-${Date.now()}`} />
+              ) : (
+                <InvestorDashboard userName={user.name} />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <AuthModal
