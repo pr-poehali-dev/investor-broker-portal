@@ -12,6 +12,16 @@ import type { PropertyObject } from '@/types/investment';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
+
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      home: 'Инвестиционный портал недвижимости',
+      objects: 'Объекты - Инвестиционный портал',
+      calculator: 'Калькулятор доходности - Инвестиционный портал',
+      dashboard: 'Личный кабинет - Инвестиционный портал'
+    };
+    document.title = titles[activeTab] || 'Инвестиционный портал недвижимости';
+  }, [activeTab]);
   const [investmentAmount, setInvestmentAmount] = useState(1000000);
   const [investmentPeriod, setInvestmentPeriod] = useState(12);
   const [expectedReturn, setExpectedReturn] = useState(15);
