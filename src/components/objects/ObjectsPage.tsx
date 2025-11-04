@@ -7,10 +7,13 @@ import Header from '@/components/Header';
 import ObjectsFilters from './ObjectsFilters';
 import ObjectCard from './ObjectCard';
 import { InvestmentObject, ObjectFilters } from '@/types/investment-object';
+import { api, InvestmentObjectDB } from '@/services/api';
 
 const ObjectsPage = () => {
   const navigate = useNavigate();
   const [objects, setObjects] = useState<InvestmentObject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<ObjectFilters>({
     search: '',
     cities: [],
@@ -31,20 +34,50 @@ const ObjectsPage = () => {
     document.title = 'Каталог объектов для инвестиций - InvestPro';
     loadObjects();
     loadFiltersFromStorage();
-    const interval = setInterval(loadObjects, 2000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     localStorage.setItem('object-filters', JSON.stringify(filters));
   }, [filters]);
 
-  const loadObjects = () => {
-    const savedObjects = localStorage.getItem('investment-objects');
-    if (savedObjects) {
-      setObjects(JSON.parse(savedObjects));
-    } else {
-      setObjects(getMockObjects());
+  const loadObjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const dbObjects = await api.getObjects({ status: 'available' });
+      
+      const convertedObjects: InvestmentObject[] = dbObjects.map((obj: InvestmentObjectDB) => ({
+        id: obj.id,
+        title: obj.title,
+        city: obj.city,
+        address: obj.address,
+        type: obj.property_type,
+        price: obj.price,
+        yield: obj.yield_percent,
+        paybackPeriod: obj.payback_years,
+        images: obj.images || [],
+        status: obj.status,
+        createdAt: obj.created_at || new Date().toISOString()
+      }));
+      
+      setObjects(convertedObjects);
+      
+      const savedLocalObjects = localStorage.getItem('investment-objects');
+      if (savedLocalObjects) {
+        const localObjects = JSON.parse(savedLocalObjects);
+        setObjects([...convertedObjects, ...localObjects]);
+      }
+    } catch (err) {
+      console.error('Failed to load objects from API:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load objects');
+      
+      const savedObjects = localStorage.getItem('investment-objects');
+      if (savedObjects) {
+        setObjects(JSON.parse(savedObjects));
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -221,7 +254,23 @@ const ObjectsPage = () => {
               </div>
             )}
 
-            {filteredObjects.length === 0 ? (
+            {loading && (
+              <div className="text-center py-16">
+                <Icon name="Loader2" size={48} className="mx-auto text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground">Загрузка объектов...</p>
+              </div>
+            )}
+
+            {error && !loading && (
+              <div className="text-center py-16">
+                <Icon name="AlertCircle" size={48} className="mx-auto text-destructive mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Ошибка загрузки</h3>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <Button onClick={loadObjects}>Попробовать снова</Button>
+              </div>
+            )}
+
+            {!loading && !error && filteredObjects.length === 0 ? (
               <div className="text-center py-16">
                 <Icon name="Search" size={64} className="mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-xl font-semibold mb-2">Объекты не найдены</h3>
@@ -240,7 +289,7 @@ const ObjectsPage = () => {
                   Сбросить фильтры
                 </Button>
               </div>
-            ) : (
+            ) : !loading && !error && (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredObjects.map((object) => (
                   <ObjectCard key={object.id} object={object} />

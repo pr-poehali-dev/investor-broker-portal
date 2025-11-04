@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
 import { InvestmentObject } from '@/types/investment-object';
 import { useNavigate } from 'react-router-dom';
+import { api, InvestmentObjectDB } from '@/services/api';
 
 interface BrokerObjectsManagerProps {
   onAddClick: () => void;
@@ -13,27 +14,74 @@ interface BrokerObjectsManagerProps {
 const BrokerObjectsManager = ({ onAddClick }: BrokerObjectsManagerProps) => {
   const navigate = useNavigate();
   const [objects, setObjects] = useState<InvestmentObject[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadObjects();
   }, []);
 
-  const loadObjects = () => {
-    const savedObjects = localStorage.getItem('investment-objects');
-    if (savedObjects) {
-      setObjects(JSON.parse(savedObjects));
+  const loadObjects = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const dbObjects = await api.getObjects();
+      
+      const convertedObjects: InvestmentObject[] = dbObjects.map((obj: InvestmentObjectDB) => ({
+        id: obj.id,
+        title: obj.title,
+        city: obj.city,
+        address: obj.address,
+        type: obj.property_type,
+        price: obj.price,
+        yield: obj.yield_percent,
+        paybackPeriod: obj.payback_years,
+        images: obj.images || [],
+        status: obj.status,
+        createdAt: obj.created_at || new Date().toISOString(),
+        brokerId: obj.broker_id
+      }));
+      
+      setObjects(convertedObjects);
+      
+      const savedLocalObjects = localStorage.getItem('investment-objects');
+      if (savedLocalObjects) {
+        const localObjects = JSON.parse(savedLocalObjects);
+        setObjects([...convertedObjects, ...localObjects]);
+      }
+    } catch (err) {
+      console.error('Failed to load objects:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load objects');
+      
+      const savedObjects = localStorage.getItem('investment-objects');
+      if (savedObjects) {
+        setObjects(JSON.parse(savedObjects));
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const updateObjectStatus = (id: number, status: 'available' | 'reserved' | 'sold') => {
-    const savedObjects = localStorage.getItem('investment-objects');
-    if (savedObjects) {
-      const objects: InvestmentObject[] = JSON.parse(savedObjects);
-      const updatedObjects = objects.map(obj => 
+  const updateObjectStatus = async (id: number, status: 'available' | 'reserved' | 'sold') => {
+    try {
+      await api.updateObject(id, { status });
+      
+      setObjects(objects.map(obj => 
         obj.id === id ? { ...obj, status } : obj
-      );
-      localStorage.setItem('investment-objects', JSON.stringify(updatedObjects));
-      setObjects(updatedObjects);
+      ));
+      
+      const savedObjects = localStorage.getItem('investment-objects');
+      if (savedObjects) {
+        const localObjects: InvestmentObject[] = JSON.parse(savedObjects);
+        const updatedObjects = localObjects.map(obj => 
+          obj.id === id ? { ...obj, status } : obj
+        );
+        localStorage.setItem('investment-objects', JSON.stringify(updatedObjects));
+      }
+    } catch (err) {
+      console.error('Failed to update object status:', err);
+      alert('Не удалось обновить статус объекта');
     }
   };
 
@@ -70,12 +118,36 @@ const BrokerObjectsManager = ({ onAddClick }: BrokerObjectsManagerProps) => {
     totalValue: objects.reduce((sum, o) => sum + o.price, 0)
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-16">
+          <Icon name="Loader2" size={48} className="mx-auto text-primary animate-spin mb-4" />
+          <p className="text-muted-foreground">Загрузка объектов...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-16">
+          <Icon name="AlertCircle" size={48} className="mx-auto text-destructive mb-4" />
+          <h3 className="text-xl font-semibold mb-2">Ошибка загрузки</h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={loadObjects}>Попробовать снова</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Мои объекты</h2>
-          <p className="text-muted-foreground">Управление инвестиционными объектами</p>
+          <h2 className="text-2xl font-bold">Объекты каталога</h2>
+          <p className="text-muted-foreground">Управление объектами недвижимости</p>
         </div>
         <Button onClick={onAddClick} className="gap-2">
           <Icon name="Plus" size={18} />

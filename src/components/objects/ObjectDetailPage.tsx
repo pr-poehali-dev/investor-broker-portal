@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
 import Header from '@/components/Header';
 import { InvestmentObject, Broker } from '@/types/investment-object';
+import { api, InvestmentObjectDB } from '@/services/api';
 
 const ObjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,8 @@ const ObjectDetailPage = () => {
   const [broker, setBroker] = useState<Broker | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<{ name: string; email: string; role: 'investor' | 'broker' } | null>(() => {
     const savedUser = localStorage.getItem('investpro-user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -40,18 +43,53 @@ const ObjectDetailPage = () => {
     }
   }, [object]);
 
-  const loadObject = (objectId: number) => {
-    const savedObjects = localStorage.getItem('investment-objects');
-    if (savedObjects) {
-      const objects: InvestmentObject[] = JSON.parse(savedObjects);
-      const foundObject = objects.find(obj => obj.id === objectId);
-      if (foundObject) {
-        setObject(foundObject);
-        loadBroker(foundObject.brokerId);
-        
-        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-        setIsFavorite(favorites.includes(objectId));
+  const loadObject = async (objectId: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const dbObject = await api.getObjectById(objectId);
+      
+      const convertedObject: InvestmentObject = {
+        id: dbObject.id,
+        title: dbObject.title,
+        city: dbObject.city,
+        address: dbObject.address,
+        type: dbObject.property_type,
+        price: dbObject.price,
+        yield: dbObject.yield_percent,
+        paybackPeriod: dbObject.payback_years,
+        images: dbObject.images || [],
+        status: dbObject.status,
+        createdAt: dbObject.created_at || new Date().toISOString(),
+        brokerId: dbObject.broker_id
+      };
+      
+      setObject(convertedObject);
+      if (dbObject.broker_id) {
+        loadBroker(dbObject.broker_id);
       }
+      
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      setIsFavorite(favorites.includes(objectId));
+    } catch (err) {
+      console.error('Failed to load object from API:', err);
+      setError('Не удалось загрузить объект');
+      
+      const savedObjects = localStorage.getItem('investment-objects');
+      if (savedObjects) {
+        const objects: InvestmentObject[] = JSON.parse(savedObjects);
+        const foundObject = objects.find(obj => obj.id === objectId);
+        if (foundObject) {
+          setObject(foundObject);
+          loadBroker(foundObject.brokerId);
+          
+          const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+          setIsFavorite(favorites.includes(objectId));
+        }
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,18 +120,38 @@ const ObjectDetailPage = () => {
     sold: { label: 'Продано', variant: 'destructive' }
   };
 
-  const toggleFavorite = () => {
-    if (!object) return;
+  const toggleFavorite = async () => {
+    if (!object || !user) return;
     
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-    
-    if (isFavorite) {
-      const newFavorites = favorites.filter((favId: number) => favId !== object.id);
-      localStorage.setItem('favorites', JSON.stringify(newFavorites));
-      setIsFavorite(false);
-    } else {
-      localStorage.setItem('favorites', JSON.stringify([...favorites, object.id]));
-      setIsFavorite(true);
+    try {
+      const userId = 1;
+      
+      if (isFavorite) {
+        await api.removeFromFavorites(userId, object.id);
+        setIsFavorite(false);
+        
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const newFavorites = favorites.filter((favId: number) => favId !== object.id);
+        localStorage.setItem('favorites', JSON.stringify(newFavorites));
+      } else {
+        await api.addToFavorites(userId, object.id);
+        setIsFavorite(true);
+        
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        localStorage.setItem('favorites', JSON.stringify([...favorites, object.id]));
+      }
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+      
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      if (isFavorite) {
+        const newFavorites = favorites.filter((favId: number) => favId !== object.id);
+        localStorage.setItem('favorites', JSON.stringify(newFavorites));
+        setIsFavorite(false);
+      } else {
+        localStorage.setItem('favorites', JSON.stringify([...favorites, object.id]));
+        setIsFavorite(true);
+      }
     }
   };
 
@@ -110,7 +168,7 @@ const ObjectDetailPage = () => {
     else if (tab === 'dashboard') navigate('/');
   };
 
-  if (!object) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header
@@ -133,8 +191,40 @@ const ObjectDetailPage = () => {
         />
         <div className="min-h-[80vh] flex items-center justify-center">
           <div className="text-center">
-            <Icon name="AlertCircle" size={64} className="mx-auto text-muted-foreground mb-4" />
+            <Icon name="Loader2" size={64} className="mx-auto text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Загрузка объекта...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !object) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header
+          activeTab="objects"
+          onTabChange={handleTabChange}
+          user={user}
+          onAuthClick={() => navigate('/')}
+          onLogout={() => {
+            setUser(null);
+            localStorage.removeItem('investpro-user');
+            navigate('/');
+          }}
+          onRoleSwitch={() => {
+            if (user) {
+              const newUser = { ...user, role: user.role === 'broker' ? 'investor' as const : 'broker' as const };
+              setUser(newUser);
+              localStorage.setItem('investpro-user', JSON.stringify(newUser));
+            }
+          }}
+        />
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="text-center">
+            <Icon name="AlertCircle" size={64} className="mx-auto text-destructive mb-4" />
             <h2 className="text-2xl font-semibold mb-2">Объект не найден</h2>
+            <p className="text-muted-foreground mb-4">{error || 'Объект был удален или не существует'}</p>
             <Button onClick={() => navigate('/objects')}>
               Вернуться к каталогу
             </Button>
