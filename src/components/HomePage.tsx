@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ interface StatItem {
 }
 
 const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
+  const navigate = useNavigate();
   const [dashboardStats, setDashboardStats] = useState<StatItem[]>([
     { label: 'Активных объектов', value: '0', change: '0%', icon: 'Building2', color: 'text-primary' },
     { label: 'Общий объем', value: '₽0', change: '0%', icon: 'TrendingUp', color: 'text-secondary' },
@@ -134,10 +136,10 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                 size="lg" 
                 variant="outline" 
                 className="border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-6"
-                onClick={() => scrollToSection('for-brokers')}
+                onClick={() => navigate('/objects')}
               >
-                <Icon name="Briefcase" className="mr-2" size={20} />
-                Для брокеров
+                <Icon name="Building2" className="mr-2" size={20} />
+                Каталог объектов
               </Button>
             </div>
           </div>

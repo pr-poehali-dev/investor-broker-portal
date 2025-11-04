@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
+import { useEffect, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,11 +21,24 @@ interface HeaderProps {
 }
 
 const Header = ({ activeTab, onTabChange, user, onAuthClick, onLogout, onRoleSwitch }: HeaderProps) => {
+  const [favoritesCount, setFavoritesCount] = useState(0);
+
+  useEffect(() => {
+    const updateFavorites = () => {
+      const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      setFavoritesCount(favorites.length);
+    };
+
+    updateFavorites();
+    const interval = setInterval(updateFavorites, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="border-b border-border bg-card sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => onTabChange('home')}>
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
               <Icon name="TrendingUp" className="text-white" size={24} />
             </div>
@@ -34,7 +48,7 @@ const Header = ({ activeTab, onTabChange, user, onAuthClick, onLogout, onRoleSwi
 </p>
             </div>
           </div>
-          <nav className="hidden md:flex gap-1">
+          <nav className="hidden md:flex gap-1 items-center">
             <Button
               variant={activeTab === 'home' ? 'default' : 'ghost'}
               onClick={() => onTabChange('home')}
@@ -67,6 +81,19 @@ const Header = ({ activeTab, onTabChange, user, onAuthClick, onLogout, onRoleSwi
               >
                 <Icon name="LayoutDashboard" size={18} />
                 Кабинет
+              </Button>
+            )}
+            {favoritesCount > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => onTabChange('objects')}
+              >
+                <Icon name="Heart" size={20} />
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {favoritesCount}
+                </Badge>
               </Button>
             )}
           </nav>

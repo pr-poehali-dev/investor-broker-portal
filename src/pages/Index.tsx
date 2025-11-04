@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import HomePage from '@/components/HomePage';
-import ObjectsPage from '@/components/ObjectsPage';
 import CalculatorPage from '@/components/CalculatorPage';
 import AuthModal from '@/components/AuthModal';
-import BrokerDashboard from '@/components/BrokerDashboard';
 import NewBrokerDashboard from '@/components/NewBrokerDashboard';
 import InvestorDashboard from '@/components/InvestorDashboard';
 import { loadSpreadsheetData } from '@/utils/importSpreadsheetData';
 import type { PropertyObject } from '@/types/investment';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -154,11 +154,19 @@ const Index = () => {
     }
   };
 
+  const handleTabChange = (tab: string) => {
+    if (tab === 'objects') {
+      navigate('/objects');
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         user={user}
         onAuthClick={() => setShowAuthModal(true)}
         onLogout={handleLogout}
@@ -181,10 +189,6 @@ const Index = () => {
               investmentObjects={investmentObjects}
               onRegisterClick={() => setShowAuthModal(true)}
             />
-          )}
-
-          {activeTab === 'objects' && (
-            <ObjectsPage investmentObjects={investmentObjects} />
           )}
 
           {activeTab === 'calculator' && (

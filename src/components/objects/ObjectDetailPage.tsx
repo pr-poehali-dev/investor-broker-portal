@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Icon from '@/components/ui/icon';
+import Header from '@/components/Header';
 import { InvestmentObject, Broker } from '@/types/investment-object';
 
 const ObjectDetailPage = () => {
@@ -16,6 +17,10 @@ const ObjectDetailPage = () => {
   const [broker, setBroker] = useState<Broker | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; role: 'investor' | 'broker' } | null>(() => {
+    const savedUser = localStorage.getItem('investpro-user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -28,6 +33,12 @@ const ObjectDetailPage = () => {
       loadObject(parseInt(id));
     }
   }, [id]);
+
+  useEffect(() => {
+    if (object) {
+      document.title = `${object.title} - InvestPro`;
+    }
+  }, [object]);
 
   const loadObject = (objectId: number) => {
     const savedObjects = localStorage.getItem('investment-objects');
@@ -92,15 +103,42 @@ const ObjectDetailPage = () => {
     setFormData({ name: '', phone: '', email: '', message: '' });
   };
 
+  const handleTabChange = (tab: string) => {
+    if (tab === 'home') navigate('/');
+    else if (tab === 'objects') navigate('/objects');
+    else if (tab === 'calculator') navigate('/');
+    else if (tab === 'dashboard') navigate('/');
+  };
+
   if (!object) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Icon name="AlertCircle" size={64} className="mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Объект не найден</h2>
-          <Button onClick={() => navigate('/objects')}>
-            Вернуться к каталогу
-          </Button>
+      <div className="min-h-screen bg-background">
+        <Header
+          activeTab="objects"
+          onTabChange={handleTabChange}
+          user={user}
+          onAuthClick={() => navigate('/')}
+          onLogout={() => {
+            setUser(null);
+            localStorage.removeItem('investpro-user');
+            navigate('/');
+          }}
+          onRoleSwitch={() => {
+            if (user) {
+              const newUser = { ...user, role: user.role === 'broker' ? 'investor' as const : 'broker' as const };
+              setUser(newUser);
+              localStorage.setItem('investpro-user', JSON.stringify(newUser));
+            }
+          }}
+        />
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="text-center">
+            <Icon name="AlertCircle" size={64} className="mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Объект не найден</h2>
+            <Button onClick={() => navigate('/objects')}>
+              Вернуться к каталогу
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -110,6 +148,24 @@ const ObjectDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Header
+        activeTab="objects"
+        onTabChange={handleTabChange}
+        user={user}
+        onAuthClick={() => navigate('/')}
+        onLogout={() => {
+          setUser(null);
+          localStorage.removeItem('investpro-user');
+          navigate('/');
+        }}
+        onRoleSwitch={() => {
+          if (user) {
+            const newUser = { ...user, role: user.role === 'broker' ? 'investor' as const : 'broker' as const };
+            setUser(newUser);
+            localStorage.setItem('investpro-user', JSON.stringify(newUser));
+          }
+        }}
+      />
       <div className="max-w-7xl mx-auto px-6 py-8">
         <Button variant="ghost" onClick={() => navigate('/objects')} className="mb-6">
           <Icon name="ArrowLeft" size={18} className="mr-2" />

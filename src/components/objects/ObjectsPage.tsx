@@ -1,12 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Icon from '@/components/ui/icon';
+import Header from '@/components/Header';
 import ObjectsFilters from './ObjectsFilters';
 import ObjectCard from './ObjectCard';
 import { InvestmentObject, ObjectFilters } from '@/types/investment-object';
 
 const ObjectsPage = () => {
+  const navigate = useNavigate();
   const [objects, setObjects] = useState<InvestmentObject[]>([]);
   const [filters, setFilters] = useState<ObjectFilters>({
     search: '',
@@ -19,10 +22,17 @@ const ObjectsPage = () => {
   });
   const [sortBy, setSortBy] = useState('default');
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; role: 'investor' | 'broker' } | null>(() => {
+    const savedUser = localStorage.getItem('investpro-user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
   useEffect(() => {
+    document.title = 'Каталог объектов для инвестиций - InvestPro';
     loadObjects();
     loadFiltersFromStorage();
+    const interval = setInterval(loadObjects, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -121,8 +131,34 @@ const ObjectsPage = () => {
     return [];
   };
 
+  const handleTabChange = (tab: string) => {
+    if (tab === 'home') navigate('/');
+    else if (tab === 'objects') navigate('/objects');
+    else if (tab === 'calculator') navigate('/');
+    else if (tab === 'dashboard') navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Header
+        activeTab="objects"
+        onTabChange={handleTabChange}
+        user={user}
+        onAuthClick={() => navigate('/')}
+        onLogout={() => {
+          setUser(null);
+          localStorage.removeItem('investpro-user');
+          navigate('/');
+        }}
+        onRoleSwitch={() => {
+          if (user) {
+            const newUser = { ...user, role: user.role === 'broker' ? 'investor' as const : 'broker' as const };
+            setUser(newUser);
+            localStorage.setItem('investpro-user', JSON.stringify(newUser));
+          }
+        }}
+      />
+
       <div className="bg-gradient-to-br from-primary to-secondary text-white py-16 px-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -131,7 +167,7 @@ const ObjectsPage = () => {
           <p className="text-xl text-white/90 mb-6">
             Подберите объект по вашим критериям доходности и бюджета
           </p>
-          <Button size="lg" variant="secondary">
+          <Button size="lg" variant="secondary" onClick={() => navigate('/')}>
             <Icon name="Sparkles" className="mr-2" />
             Получить персональную подборку
           </Button>
