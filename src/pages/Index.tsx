@@ -177,7 +177,10 @@ const Index = () => {
         
         <div className={`transition-opacity duration-300 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
           {activeTab === 'home' && (
-            <HomePage investmentObjects={investmentObjects} />
+            <HomePage 
+              investmentObjects={investmentObjects}
+              onRegisterClick={() => setShowAuthModal(true)}
+            />
           )}
 
           {activeTab === 'objects' && (

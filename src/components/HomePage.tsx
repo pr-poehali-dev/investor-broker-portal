@@ -20,6 +20,7 @@ interface InvestmentObject {
 
 interface HomePageProps {
   investmentObjects: InvestmentObject[];
+  onRegisterClick?: () => void;
 }
 
 interface StatItem {
@@ -30,7 +31,7 @@ interface StatItem {
   color: string;
 }
 
-const HomePage = ({ investmentObjects }: HomePageProps) => {
+const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
   const [dashboardStats, setDashboardStats] = useState<StatItem[]>([
     { label: 'Активных объектов', value: '0', change: '0%', icon: 'Building2', color: 'text-primary' },
     { label: 'Общий объем', value: '₽0', change: '0%', icon: 'TrendingUp', color: 'text-secondary' },
@@ -125,7 +126,7 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
             </p>
             
             <div className="flex flex-wrap gap-4 justify-center pt-6">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6">
+              <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6" onClick={onRegisterClick}>
                 <Icon name="TrendingUp" className="mr-2" size={20} />
                 Начать инвестировать
               </Button>
