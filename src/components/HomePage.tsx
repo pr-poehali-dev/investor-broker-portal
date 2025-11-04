@@ -341,7 +341,7 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
           </div>
           
           <div className="text-center mt-12">
-            <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6">
+            <Button size="lg" className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6" onClick={onRegisterClick}>
               <Icon name="Rocket" className="mr-2" size={20} />
               Подключиться как брокер
             </Button>
