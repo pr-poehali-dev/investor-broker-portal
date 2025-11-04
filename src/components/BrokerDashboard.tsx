@@ -14,18 +14,21 @@ interface InvestmentObject {
   title: string;
   location: string;
   type: string;
-  minInvestment: number;
+  price: number;
   expectedReturn: number;
   term: number;
   risk: string;
-  progress: number;
   image: string;
   status: 'active' | 'pending' | 'completed';
   description: string;
-  totalRaised: number;
   investors: number;
   revenue: number;
   monthlyGrowth: number;
+  financing: {
+    cash: boolean;
+    mortgage?: { available: boolean; rate?: number; downPayment?: number };
+    installment?: { available: boolean; months?: number; downPayment?: number };
+  };
 }
 
 interface Investor {
@@ -52,18 +55,21 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
       title: 'ЖК «Северный квартал»',
       location: 'Москва, САО',
       type: 'Жилая недвижимость',
-      minInvestment: 500000,
+      price: 8500000,
       expectedReturn: 22,
       term: 24,
       risk: 'Средний',
-      progress: 67,
       image: '🏢',
       status: 'active',
       description: 'Современный жилой комплекс в северном округе Москвы',
-      totalRaised: 8500000,
       investors: 17,
       revenue: 1870000,
-      monthlyGrowth: 155800
+      monthlyGrowth: 155800,
+      financing: {
+        cash: true,
+        mortgage: { available: true, rate: 12.5, downPayment: 30 },
+        installment: { available: true, months: 36, downPayment: 20 }
+      }
     }
   ]);
 
@@ -94,14 +100,14 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
     }
   ]);
 
-  const totalRaised = myObjects.reduce((sum, obj) => sum + obj.totalRaised, 0);
+  const totalPortfolioValue = myObjects.reduce((sum, obj) => sum + obj.price, 0);
   const totalInvestors = investors.length;
   const totalRevenue = myObjects.reduce((sum, obj) => sum + obj.revenue, 0);
   const avgReturn = myObjects.reduce((sum, obj) => sum + obj.expectedReturn, 0) / myObjects.length || 0;
 
   const stats = [
     { label: 'Активных объектов', value: myObjects.filter(o => o.status === 'active').length, icon: 'Building2', color: 'text-primary' },
-    { label: 'Привлечено капитала', value: `₽${(totalRaised / 1000000).toFixed(1)}M`, icon: 'Wallet', color: 'text-green-600' },
+    { label: 'Стоимость портфеля', value: `₽${(totalPortfolioValue / 1000000).toFixed(1)}M`, icon: 'Wallet', color: 'text-green-600' },
     { label: 'Инвесторов', value: totalInvestors, icon: 'Users', color: 'text-secondary' },
     { label: 'Средняя доходность', value: `${avgReturn.toFixed(1)}%`, icon: 'TrendingUp', color: 'text-primary' },
     { label: 'Выручка', value: `₽${(totalRevenue / 1000000).toFixed(1)}M`, icon: 'DollarSign', color: 'text-green-600' }
@@ -111,11 +117,16 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
     title: '',
     location: '',
     type: 'residential',
-    minInvestment: '',
+    price: '',
     expectedReturn: '',
     term: '',
     risk: 'medium',
-    description: ''
+    description: '',
+    financing: {
+      cash: true,
+      mortgage: { available: false, rate: '', downPayment: '' },
+      installment: { available: false, months: '', downPayment: '' }
+    }
   });
 
   const handleAddObject = () => {
@@ -124,18 +135,29 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
       title: newObject.title,
       location: newObject.location,
       type: newObject.type === 'residential' ? 'Жилая недвижимость' : 'Коммерческая недвижимость',
-      minInvestment: parseInt(newObject.minInvestment),
+      price: parseInt(newObject.price),
       expectedReturn: parseInt(newObject.expectedReturn),
       term: parseInt(newObject.term),
       risk: newObject.risk === 'low' ? 'Низкий' : newObject.risk === 'medium' ? 'Средний' : 'Высокий',
-      progress: 0,
       image: newObject.type === 'residential' ? '🏢' : '🏬',
       status: 'pending',
       description: newObject.description,
-      totalRaised: 0,
       investors: 0,
       revenue: 0,
-      monthlyGrowth: 0
+      monthlyGrowth: 0,
+      financing: {
+        cash: newObject.financing.cash,
+        mortgage: newObject.financing.mortgage.available ? {
+          available: true,
+          rate: parseFloat(newObject.financing.mortgage.rate),
+          downPayment: parseFloat(newObject.financing.mortgage.downPayment)
+        } : undefined,
+        installment: newObject.financing.installment.available ? {
+          available: true,
+          months: parseInt(newObject.financing.installment.months),
+          downPayment: parseFloat(newObject.financing.installment.downPayment)
+        } : undefined
+      }
     };
     setMyObjects([...myObjects, object]);
     setShowAddModal(false);
@@ -143,11 +165,16 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
       title: '',
       location: '',
       type: 'residential',
-      minInvestment: '',
+      price: '',
       expectedReturn: '',
       term: '',
       risk: 'medium',
-      description: ''
+      description: '',
+      financing: {
+        cash: true,
+        mortgage: { available: false, rate: '', downPayment: '' },
+        installment: { available: false, months: '', downPayment: '' }
+      }
     });
   };
 

@@ -4,17 +4,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import Icon from '@/components/ui/icon';
 
 interface NewObjectForm {
   title: string;
   location: string;
   type: string;
-  minInvestment: string;
+  price: string;
   expectedReturn: string;
   term: string;
   risk: string;
   description: string;
+  financing: {
+    cash: boolean;
+    mortgage: { available: boolean; rate: string; downPayment: string };
+    installment: { available: boolean; months: string; downPayment: string };
+  };
 }
 
 interface AddObjectDialogProps {
@@ -89,13 +95,13 @@ const AddObjectDialog = ({ open, onOpenChange, newObject, onNewObjectChange, onS
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="minInvestment">Минимум (₽)</Label>
+              <Label htmlFor="price">Стоимость (₽)</Label>
               <Input
-                id="minInvestment"
+                id="price"
                 type="number"
-                placeholder="500000"
-                value={newObject.minInvestment}
-                onChange={(e) => onNewObjectChange({ ...newObject, minInvestment: e.target.value })}
+                placeholder="5000000"
+                value={newObject.price}
+                onChange={(e) => onNewObjectChange({ ...newObject, price: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -109,7 +115,7 @@ const AddObjectDialog = ({ open, onOpenChange, newObject, onNewObjectChange, onS
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="term">Срок (мес)</Label>
+              <Label htmlFor="term">Окупаемость (мес)</Label>
               <Input
                 id="term"
                 type="number"
@@ -117,6 +123,115 @@ const AddObjectDialog = ({ open, onOpenChange, newObject, onNewObjectChange, onS
                 value={newObject.term}
                 onChange={(e) => onNewObjectChange({ ...newObject, term: e.target.value })}
               />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <Label>Способы приобретения</Label>
+            <div className="space-y-3 p-4 border rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="cash" 
+                  checked={newObject.financing.cash}
+                  onCheckedChange={(checked) => 
+                    onNewObjectChange({ ...newObject, financing: { ...newObject.financing, cash: !!checked } })
+                  }
+                />
+                <Label htmlFor="cash" className="font-normal cursor-pointer">Полная оплата</Label>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="mortgage" 
+                    checked={newObject.financing.mortgage.available}
+                    onCheckedChange={(checked) => 
+                      onNewObjectChange({ 
+                        ...newObject, 
+                        financing: { 
+                          ...newObject.financing, 
+                          mortgage: { ...newObject.financing.mortgage, available: !!checked } 
+                        } 
+                      })
+                    }
+                  />
+                  <Label htmlFor="mortgage" className="font-normal cursor-pointer">Ипотека</Label>
+                </div>
+                {newObject.financing.mortgage.available && (
+                  <div className="grid grid-cols-2 gap-2 ml-6">
+                    <Input 
+                      placeholder="Ставка %" 
+                      type="number"
+                      value={newObject.financing.mortgage.rate}
+                      onChange={(e) => onNewObjectChange({
+                        ...newObject,
+                        financing: {
+                          ...newObject.financing,
+                          mortgage: { ...newObject.financing.mortgage, rate: e.target.value }
+                        }
+                      })}
+                    />
+                    <Input 
+                      placeholder="Первый взнос %" 
+                      type="number"
+                      value={newObject.financing.mortgage.downPayment}
+                      onChange={(e) => onNewObjectChange({
+                        ...newObject,
+                        financing: {
+                          ...newObject.financing,
+                          mortgage: { ...newObject.financing.mortgage, downPayment: e.target.value }
+                        }
+                      })}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="installment" 
+                    checked={newObject.financing.installment.available}
+                    onCheckedChange={(checked) => 
+                      onNewObjectChange({ 
+                        ...newObject, 
+                        financing: { 
+                          ...newObject.financing, 
+                          installment: { ...newObject.financing.installment, available: !!checked } 
+                        } 
+                      })
+                    }
+                  />
+                  <Label htmlFor="installment" className="font-normal cursor-pointer">Рассрочка</Label>
+                </div>
+                {newObject.financing.installment.available && (
+                  <div className="grid grid-cols-2 gap-2 ml-6">
+                    <Input 
+                      placeholder="Срок (мес)" 
+                      type="number"
+                      value={newObject.financing.installment.months}
+                      onChange={(e) => onNewObjectChange({
+                        ...newObject,
+                        financing: {
+                          ...newObject.financing,
+                          installment: { ...newObject.financing.installment, months: e.target.value }
+                        }
+                      })}
+                    />
+                    <Input 
+                      placeholder="Первый взнос %" 
+                      type="number"
+                      value={newObject.financing.installment.downPayment}
+                      onChange={(e) => onNewObjectChange({
+                        ...newObject,
+                        financing: {
+                          ...newObject.financing,
+                          installment: { ...newObject.financing.installment, downPayment: e.target.value }
+                        }
+                      })}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <div className="space-y-2">
