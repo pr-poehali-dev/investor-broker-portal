@@ -177,6 +177,7 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                 icon: 'Target',
                 title: 'Выбирайте стратегию',
                 description: 'Пройдите тест и получите персональный инвестиционный план',
+                benefit: 'Получите персональный инвестиционный план за 5 минут',
                 color: 'from-blue-500 to-blue-600'
               },
               {
@@ -184,6 +185,7 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                 icon: 'Search',
                 title: 'Найдите идеальный объект',
                 description: 'Умный каталог с актуальными проверенными предложениями',
+                benefit: 'Фильтруйте объекты по доходности, сумме входа, локации',
                 color: 'from-purple-500 to-purple-600'
               },
               {
@@ -191,6 +193,7 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                 icon: 'Handshake',
                 title: 'Совершите сделку',
                 description: 'Рейтинги, отзывы и полная юридическая защита',
+                benefit: 'Сравнивайте рейтинги брокеров и читайте реальные отзывы',
                 color: 'from-pink-500 to-pink-600'
               },
               {
@@ -198,13 +201,14 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                 icon: 'LineChart',
                 title: 'Отслеживайте рост',
                 description: 'Аналитика денежного потока и стоимости актива в личном кабинете',
+                benefit: 'Отслеживайте доходность портфеля в личном кабинете 24/7',
                 color: 'from-orange-500 to-orange-600'
               }
             ].map((item, index) => (
-              <Card key={index} className="relative overflow-hidden group hover:shadow-xl transition-all">
+              <Card key={index} className="relative overflow-hidden group hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer">
                 <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${item.color}`}></div>
                 <CardHeader>
-                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4`}>
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <Icon name={item.icon} size={32} className="text-white" />
                   </div>
                   <div className="text-5xl font-bold text-muted-foreground/20 absolute top-4 right-4">
@@ -213,10 +217,21 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                   <CardTitle className="text-xl">{item.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{item.description}</p>
+                  <p className="text-muted-foreground mb-3">{item.description}</p>
+                  <div className="flex items-start gap-2 bg-primary/5 rounded-lg p-3 border border-primary/10">
+                    <Icon name="CheckCircle2" size={16} className="text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-sm font-medium text-primary">{item.benefit}</p>
+                  </div>
                 </CardContent>
               </Card>
             ))}
+          </div>
+          
+          <div className="text-center mt-12">
+            <Button size="lg" className="bg-primary text-white hover:bg-primary/90 text-lg px-8 py-6" onClick={onRegisterClick}>
+              <Icon name="Rocket" className="mr-2" size={20} />
+              Начать инвестировать
+            </Button>
           </div>
         </div>
       </section>
@@ -277,6 +292,76 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
         </div>
       </section>
 
+      <section id="testimonials" data-animate className={`py-20 px-6 bg-background transition-all duration-1000 ${visibleSections.has('testimonials') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <Badge className="bg-primary/10 text-primary mb-4">95% клиентов рекомендуют</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Истории успеха наших инвесторов
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Реальные отзывы от тех, кто уже зарабатывает на недвижимости
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: 'Алексей Морозов',
+                city: 'Москва',
+                avatar: '👨‍💼',
+                investment: 'Инвестор в апартаменты',
+                date: 'Октябрь 2024',
+                rating: 5,
+                text: 'За 8 месяцев мой портфель вырос на 18%. Платформа помогла разобраться в инвестициях с нуля. Особенно понравился персональный план и прозрачная аналитика.'
+              },
+              {
+                name: 'Мария Соколова',
+                city: 'Санкт-Петербург',
+                avatar: '👩‍💼',
+                investment: 'Вложилась в 2 объекта',
+                date: 'Сентябрь 2024',
+                rating: 5,
+                text: 'Долго искала надежную площадку для инвестиций. Здесь все понятно: рейтинги брокеров, проверенные объекты, юридическое сопровождение. Уже получила первую прибыль!'
+              },
+              {
+                name: 'Дмитрий Кузнецов',
+                city: 'Казань',
+                avatar: '👨‍💻',
+                investment: 'Портфель из 4 объектов',
+                date: 'Август 2024',
+                rating: 5,
+                text: 'Начинал с 500 тысяч, сейчас управляю портфелем в 3 млн. Удобный личный кабинет показывает всю статистику в реальном времени. Рекомендую!'
+              }
+            ].map((review, index) => (
+              <Card key={index} className="hover:shadow-xl transition-all">
+                <CardHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl flex-shrink-0">
+                      {review.avatar}
+                    </div>
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{review.name}</CardTitle>
+                      <CardDescription className="text-sm">{review.city}</CardDescription>
+                      <Badge className="mt-2 bg-primary/10 text-primary text-xs">{review.investment}</Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-1 mt-3">
+                    {Array.from({ length: review.rating }).map((_, i) => (
+                      <Icon key={i} name="Star" size={16} className="text-yellow-500 fill-yellow-500" />
+                    ))}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-3">{review.text}</p>
+                  <p className="text-xs text-muted-foreground">{review.date}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="for-brokers" data-animate className={`py-20 px-6 bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white transition-all duration-1000 ${visibleSections.has('for-brokers') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -295,27 +380,31 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
             {[
               {
                 icon: 'Store',
-                title: 'Персональная брокерская витрина',
-                description: 'Портфолио с рейтингами и историей сделок',
-                benefit: 'Укрепите репутацию и привлекайте больше клиентов'
+                title: 'Персональная визитка брокера',
+                description: 'Страница с портфолио, рейтингом и отзывами клиентов',
+                benefit: 'Укрепите репутацию и привлекайте больше клиентов',
+                features: ['Портфолио объектов', 'История сделок', 'Отзывы клиентов']
+              },
+              {
+                icon: 'LayoutDashboard',
+                title: 'Управление объектами',
+                description: 'Моментальное обновление статусов, архив проданных объектов',
+                benefit: 'Избавьтесь от устаревших объявлений навсегда',
+                features: ['Обновление в 1 клик', 'Архив сделок', 'Аналитика просмотров']
               },
               {
                 icon: 'Video',
                 title: 'Дистанционные сделки',
-                description: 'Онлайн-показы, 3D-туры и электронный документооборот',
-                benefit: 'Экономьте время на рутинных процессах'
+                description: 'Встроенные инструменты для онлайн-показов и документооборота',
+                benefit: 'Экономьте время на рутинных процессах',
+                features: ['Онлайн-показы', '3D-туры', 'Электронный документооборот']
               },
               {
-                icon: 'RefreshCw',
-                title: 'Автоматическая актуальность',
-                description: 'Мгновенное обновление статусов объектов',
-                benefit: 'Избавьтесь от устаревших объявлений'
-              },
-              {
-                icon: 'UserCheck',
-                title: 'База лояльных инвесторов',
-                description: 'Целевые заявки от подготовленных пользователей',
-                benefit: 'Работайте только с заинтересованными клиентами'
+                icon: 'Users',
+                title: 'Теплые лиды',
+                description: 'Заявки от инвесторов, прошедших обучение на платформе',
+                benefit: 'Работайте только с заинтересованными клиентами',
+                features: ['Целевые заявки', 'Профиль инвестора', 'История запросов']
               }
             ].map((item, index) => (
               <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all">
@@ -331,10 +420,18 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-start gap-2 bg-white/10 rounded-lg p-3">
+                  <div className="flex items-start gap-2 bg-white/10 rounded-lg p-3 mb-4">
                     <Icon name="Sparkles" size={16} className="text-yellow-300 mt-0.5 flex-shrink-0" />
-                    <p className="text-sm text-white/90">{item.benefit}</p>
+                    <p className="text-sm text-white/90 font-medium">{item.benefit}</p>
                   </div>
+                  <ul className="space-y-2">
+                    {item.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center text-sm text-white/80">
+                        <Icon name="CheckCircle2" size={14} className="mr-2 text-white/60" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
             ))}
@@ -365,33 +462,40 @@ const HomePage = ({ investmentObjects, onRegisterClick }: HomePageProps) => {
               {
                 icon: 'Shield',
                 title: 'Юридический эскроу',
-                description: 'Средства защищены до завершения сделки'
+                description: 'Средства защищены до завершения сделки',
+                detail: 'Каждая сделка проходит через счет эскроу с гарантией возврата'
               },
               {
                 icon: 'FileCheck',
                 title: 'Аудит всех объектов',
-                description: 'Проверка документов и юридической чистоты'
+                description: 'Проверка документов и юридической чистоты',
+                detail: 'Каждый объект проходит 3-этапную проверку юристами'
               },
               {
-                icon: 'Star',
-                title: 'Рейтинги и отзывы',
-                description: 'Прозрачная репутационная система'
+                icon: 'Users',
+                title: 'Сопровождение сделки',
+                description: 'Юрист проверяет все документы по сделке',
+                detail: 'Персональный юрист ведет вашу сделку от начала до конца'
               },
               {
                 icon: 'Headphones',
                 title: 'Поддержка 24/7',
-                description: 'Всегда на связи для решения вопросов'
+                description: 'Всегда на связи для решения вопросов',
+                detail: 'Персональный менеджер и техподдержка в любое время'
               }
             ].map((item, index) => (
-              <Card key={index} className="text-center hover:shadow-lg transition-all">
+              <Card key={index} className="text-center hover:shadow-lg hover:scale-105 transition-all">
                 <CardHeader>
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-4">
                     <Icon name={item.icon} size={32} className="text-white" />
                   </div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
+                  <CardTitle className="text-lg mb-2">{item.title}</CardTitle>
+                  <CardDescription className="text-sm">{item.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">{item.detail}</p>
+                  </div>
                 </CardContent>
               </Card>
             ))}
