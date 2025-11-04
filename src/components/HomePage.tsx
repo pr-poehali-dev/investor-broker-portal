@@ -37,11 +37,30 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
     { label: 'Средняя доходность', value: '0%', change: '0%', icon: 'Percent', color: 'text-primary' },
     { label: 'Инвесторов', value: '0', change: '0', icon: 'Users', color: 'text-secondary' }
   ]);
+  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadDashboardStats();
     const interval = setInterval(loadDashboardStats, 2000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setVisibleSections((prev) => new Set(prev).add(entry.target.id));
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const sections = document.querySelectorAll('[data-animate]');
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
   }, []);
 
   const loadDashboardStats = () => {
@@ -201,7 +220,7 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-muted/30">
+      <section id="growth" data-animate className={`py-20 px-6 bg-muted/30 transition-all duration-1000 ${visibleSections.has('growth') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
@@ -257,7 +276,7 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
         </div>
       </section>
 
-      <section id="for-brokers" className="py-20 px-6 bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white">
+      <section id="for-brokers" data-animate className={`py-20 px-6 bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white transition-all duration-1000 ${visibleSections.has('for-brokers') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="bg-white/20 text-white border-white/30 mb-4">
@@ -329,7 +348,7 @@ const HomePage = ({ investmentObjects }: HomePageProps) => {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-background">
+      <section id="security" data-animate className={`py-20 px-6 bg-background transition-all duration-1000 ${visibleSections.has('security') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-4">
