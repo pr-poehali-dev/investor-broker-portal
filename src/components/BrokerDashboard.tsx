@@ -49,29 +49,32 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
   const [editingObject, setEditingObject] = useState<InvestmentObject | null>(null);
   const [selectedInvestor, setSelectedInvestor] = useState<Investor | null>(null);
   
-  const [myObjects, setMyObjects] = useState<InvestmentObject[]>([
-    {
-      id: 1,
-      title: 'ЖК «Северный квартал»',
-      location: 'Москва, САО',
-      type: 'Жилая недвижимость',
-      price: 8500000,
-      expectedReturn: 22,
-      term: 24,
-      risk: 'Средний',
-      image: '🏢',
-      status: 'active',
-      description: 'Современный жилой комплекс в северном округе Москвы',
-      investors: 17,
-      revenue: 1870000,
-      monthlyGrowth: 155800,
-      financing: {
-        cash: true,
-        mortgage: { available: true, rate: 12.5, downPayment: 30 },
-        installment: { available: true, months: 36, downPayment: 20 }
+  const [myObjects, setMyObjects] = useState<InvestmentObject[]>(() => {
+    const saved = localStorage.getItem('broker-objects');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 1,
+        title: 'ЖК «Северный квартал»',
+        location: 'Москва, САО',
+        type: 'Жилая недвижимость',
+        price: 8500000,
+        expectedReturn: 22,
+        term: 24,
+        risk: 'Средний',
+        image: '🏢',
+        status: 'active',
+        description: 'Современный жилой комплекс в северном округе Москвы',
+        investors: 17,
+        revenue: 1870000,
+        monthlyGrowth: 155800,
+        financing: {
+          cash: true,
+          mortgage: { available: true, rate: 12.5, downPayment: 30 },
+          installment: { available: true, months: 36, downPayment: 20 }
+        }
       }
-    }
-  ]);
+    ];
+  });
 
   const [investors, setInvestors] = useState<Investor[]>([
     {
@@ -159,7 +162,9 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
         } : undefined
       }
     };
-    setMyObjects([...myObjects, object]);
+    const updated = [...myObjects, object];
+    setMyObjects(updated);
+    localStorage.setItem('broker-objects', JSON.stringify(updated));
     setShowAddModal(false);
     setNewObject({
       title: '',
@@ -180,12 +185,16 @@ const BrokerDashboard = ({ userName }: BrokerDashboardProps) => {
 
   const handleUpdateObject = () => {
     if (!editingObject) return;
-    setMyObjects(prev => prev.map(obj => obj.id === editingObject.id ? editingObject : obj));
+    const updated = myObjects.map(obj => obj.id === editingObject.id ? editingObject : obj);
+    setMyObjects(updated);
+    localStorage.setItem('broker-objects', JSON.stringify(updated));
     setEditingObject(null);
   };
 
   const handleDeleteObject = (id: number) => {
-    setMyObjects(prev => prev.filter(obj => obj.id !== id));
+    const filtered = myObjects.filter(obj => obj.id !== id);
+    setMyObjects(filtered);
+    localStorage.setItem('broker-objects', JSON.stringify(filtered));
   };
 
   const getRiskColor = (risk: string) => {
